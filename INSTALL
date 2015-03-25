@@ -1,0 +1,51 @@
+Installation
+------------
+
+THIS IS NOT READY YET
+THIS IS NOT READY YET
+THIS IS NOT READY YET
+THIS IS NOT READY YET
+THIS IS NOT READY YET
+THIS IS NOT READY YET
+
+This is only one part of the installation process for the Natural Message
+command line client.
+
+The easiest installation process on tested platforms would be to download
+and run the NatMsgInstaller.py, which will also install dependencies.
+I will post that program as a separate project.
+
+The Python 3 programs in thei project  require other things that are not 
+installed here... If the NatMsgInstaller.py program does not work on your
+system, you can install these (check the NatMsgInstaller.py program for the
+latest version of each, especially on Windows):
+
+ * pycrypto: https://www.dropbox.com/s/n6rckn0k6u4nqke/pycrypto-2.6.1.zip?dl=1
+ * requests: https://github.com/kennethreitz/requests/tarball/master
+ * RNCryptor: https://github.com/RNCryptor/RNCryptor-python/tarball/master
+	 (RNCryptor pure python module is included in this package, so you do not
+   need to download it).
+ * Natural Message Server Verification programs (C programs that are needed if 
+   you want to verify the identity of servers).
+
+For this to run, you need to have python 3 (not version 2.x).  If you are
+using Windows, you need to use the exact python version that corresponds to
+one of the packages built for Windows.  That is because the pycrypto library
+has to be compiled for the exact Windows configuration.
+
+For this to run, you might want to install setuputils from your package
+manager. Many systems already have setuputils, but some do not.  For FreeBSD,
+try the following (use the appropriate version for your system and version of
+python):
+
+  $ pkg search setuputils
+  $ pkg install py34-setuptools34-5.5.1
+
+natmsgcc uses distutils.  Use setup.py to install it in the usual way:
+
+  $ python setup.py install
+
+You can, of course, do
+
+  $ python setup.py --help
+
