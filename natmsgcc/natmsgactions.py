@@ -2523,7 +2523,7 @@ def nm_edit_file(fname):
 	if platform.system().lower() == 'darwin':
 		os.system('open "' + fname + '"')
 	elif platform.system().lower() == 'windows':
-		os.filestart('"' + fname + '"')
+		os.startfile('"' + fname + '"')
 	else:
 		# linux, bsd, etc.
 		if 'editor_command' not in natmsgclib.MAIN_CONFIG['SETTINGS'].keys():
@@ -2715,7 +2715,7 @@ def nm_view_rtf(fname):
 	if platform.system().lower() == 'darwin':
 		os.system('open "' + fname + '"')
 	elif platform.system().lower() == 'windows':
-		os.filestart('"' + fname + '"')
+		os.startfile('"' + fname + '"')
 	else:
 		if 'rtf_reader_pgm' not in natmsgclib.MAIN_CONFIG['SETTINGS'].keys():
 			# There is no key for 'rtf_reader_pgm' in the options file.
