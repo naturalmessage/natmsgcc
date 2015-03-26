@@ -26,6 +26,8 @@ setup(name='natmsgcc',
 	url='http://naturalmessage.com',
 	licence='GPL3',
 	packages=['natmsgcc'],
-	install_requires=['pycrypto>=2.6.1', 'requests'],
 	py_modules = ['natmsgcc.natmsgcc', 'natmsgcc.natmsg_offline_reader',
 		'natmsgcc.natmsgclib', 'natmsgcc.natmsgactions', 'natmsgcc.RNCryptor'] )
+#
+#
+#install_requires=['pycrypto>=2.6.1', 'requests'],
