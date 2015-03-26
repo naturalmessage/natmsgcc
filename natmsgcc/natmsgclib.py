@@ -36,7 +36,6 @@ import json
 import math
 import os
 import platform
-import pwd
 import re
 import requests
 import shutil
@@ -45,6 +44,9 @@ import sys
 import tempfile
 import threading
 import time
+
+if platform.system().lower() != 'windows':
+	import pwd
 
 ###lock = threading.Lock() # one locking object uber alles
 MAX_INPUT_SIZE_BYTES = 193000
@@ -581,7 +583,7 @@ class thread_shard_send(threading.Thread):
 		requests.packages.urllib3.disable_warnings()
 		try:
 			## r = requests.post(url, verify=False, files=attached_files, headers=hdrs)
-			self.r = requests.post(self.url, verify=False, files=self.attached_files)
+			self.r = requests.post(self.url, headers={'User-Agent':''}, verify=False, files=self.attached_files)
 		except:
 			self.err_msg = 'Error. Could not create shard: ' + self.shard_id
 			if self.r is not None:
@@ -751,7 +753,7 @@ class thread_shard_receive(threading.Thread):
 		nm_write_shard_status(self.status_fname, 'receiving')
 		requests.packages.urllib3.disable_warnings()
 		try:
-			self.r = requests.get(self.url, verify=False)
+			self.r = requests.get(self.url, headers={'User-Agent':''}, verify=False)
 		except:
 			self.e = str(sys.exc_info()[0:2])
 			nm_write_shard_status(self.status_fname, 'failed', error_detail=self.e)
@@ -1425,7 +1427,7 @@ def nm_smd_create(web_host, dest_box_id,
 	r = None
 	requests.packages.urllib3.disable_warnings()
 	try:
-		r = requests.post(url, verify=False, files=attached_files)
+		r = requests.post(url, headers={'User-Agent': ''}, verify=False, files=attached_files)
 	except:
 		err_msg = 'Faled to post shard_metadata'
 		if r is not None:
@@ -1944,7 +1946,7 @@ def nm_inbox_read(host, port_nbr, private_box_id=None, smd_id=None, save_dir=Non
 			# On the first read or old-school read, I don't have a session ID
 			requests.packages.urllib3.disable_warnings()
 			try:
-				r = requests.get(url, verify=False)
+				r = requests.get(url, headers={'User-Agent':''}, verify=False)
 			except:
 				e = repr(sys.exc_info()[0:2])
 				# Halt on server errors (but not not invalid SMD format).
@@ -1960,7 +1962,7 @@ def nm_inbox_read(host, port_nbr, private_box_id=None, smd_id=None, save_dir=Non
 					+ previous_smd_id
 
 			try:
-				r = requests.get(url, verify=False)
+				r = requests.get(url, headers={'User-Agent':''}, verify=False)
 			except:
 				e = repr(sys.exc_info()[0:2])
 				# Halt on server errors (but not not invalid SMD format).
@@ -2221,7 +2223,7 @@ def nm_account_create(private_box_id=None, host=None):
 		# The verify=False option helps me to accept the 
 		# self-signed certificate. The user optionally authenticates
 		# the server with GPG.
-		r = requests.get(url, verify=False)
+		r = requests.get(url, headers={'User-Agent':''}, verify=False)
 	except:
 		e = repr(sys.exc_info()[0:2])
 		# Note: if the server is down, r will be None.
@@ -2817,7 +2819,7 @@ def nm_fetch_server_farm():
 	try:
 		# The verify=True option means that I am relying on regular SSL/TLS
 		# and the server's certificate.
-		r = requests.get(url, verify=False) # not verifying !!!!!!!!!!!!!!!!!!!!!!!
+		r = requests.get(url, headers={'User-Agent':''}, verify=False) # not verifying !!!!!!!!!!!!!!!!!!!!!!!
 	except:
 		e = repr(sys.exc_info()[0:2])
 		# Note: if the server is down, r will be None.
