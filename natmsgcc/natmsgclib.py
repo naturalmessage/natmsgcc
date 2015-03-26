@@ -300,24 +300,6 @@ def pow_target_bits(file_size, pow_factor, bit_constant, min_bits):
 	return(target_bits)
 
 ########################################################################
-##class vv():
-##	"""I might use this to format custom debug messages.
-##	In each new function, call vv.indent() to increase the 
-##	indentation of debug messages.
-##	"""
-##	def __init__(self, verbosity, indentation):
-##		self.verbosity = verbosity
-##		self.indentation = indentation
-##
-##	def indent(self, ct=1):
-##		self.indentation += ct
-##		return(self.indentation)
-##
-##	def indentation(self):
-##		return(self.indent)
-##
-##	def verbosity(self):
-##		return(self.verbosity)
 ########################################################################
 
 class RNCrypt_bob(RNCryptor.RNCryptor):
@@ -3751,7 +3733,7 @@ def nm_create_config_file(homedir):
 	MAIN_CONFIG['SETTINGS'] = {'update_interval': '5',
 		'mail_dir': MAIL_DIR,
 		'download_directory': os.path.expanduser('~/Downloads'),
-		'verbosity': 8,
+		'verbosity': 2,
 		'current_identity': 'Identity1',
 		'screen_height': 20,
 		'screen_width': 80,
@@ -3826,6 +3808,17 @@ def nm_create_config_file(homedir):
 				config_txt = nm_encrypt_local_txt(nickname, SESSION_PW)
 				MAIN_CONFIG['Identity1']['nickname2'] = config_txt
 
+	# Add Bob's ID as a contact
+
+	config_txt = nm_encrypt_local_txt( 'PUB002016013113CC95900BF7D64498E8A23D6D00E3862CF3B29E2B597DB492BC65CCADF11AF529AF8914B7B2B4290E6F86D54DC1E6C4C02EEFF12D63675A802820BEAF7869BB', SESSION_PW)
+	MAIN_CONFIG['Identity1']['contact_public_box_id1'] = config_txt
+
+	config_txt = nm_encrypt_local_txt( 'Robert Hoot (pgm author)', SESSION_PW)
+	MAIN_CONFIG['Identity1']['contact_nickname1'] = config_txt
+
+	config_txt = nm_encrypt_local_txt('Send questions, comments, bug reports, feature requests, etc. ' \
+		+ 'to Robert Hoot.', SESSION_PW)
+	MAIN_CONFIG['Identity1']['contact_note1'] = config_txt
 
 	########################################################################
 	#														Top Secret Identity
