@@ -4277,11 +4277,11 @@ def nm_start(batch=False):
 				if platform.system().lower() != 'windows':
 					debug_msg(2, '==== fixing owner for ' \
 						+ d)
-			# The ownership thing would test for problems if the user
-			# copied an old archive to a new computer or user ID.
-			# (it might fail, but at least you will know why)
-			shutil.chown(d, user=pwd.getpwnam(os.getlogin()).pw_uid,
-				group=pwd.getpwnam(os.getlogin()).pw_gid)
+					# The ownership thing would test for problems if the user
+					# copied an old archive to a new computer or user ID.
+					# (it might fail, but at least you will know why)
+					shutil.chown(d, user=pwd.getpwnam(os.getlogin()).pw_uid,
+						group=pwd.getpwnam(os.getlogin()).pw_gid)
 
 	## some verification
 	if 'screen_width' not in MAIN_CONFIG['SETTINGS'].keys():
