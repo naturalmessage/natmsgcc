@@ -1805,7 +1805,6 @@ def nm_add_contact(identity_nbr=None, box_id=None):
 			return(natmsgclib.print_err(6467, 'The box_id sent to nm_add_contact is invalid: ' \
 				+ box_id))
 
-
 	if identity_nbr is None:
 		current_identity = natmsgclib.MAIN_CONFIG['SETTINGS']['current_identity']
 	else:
@@ -1816,7 +1815,7 @@ def nm_add_contact(identity_nbr=None, box_id=None):
 			+ current_identity))
 		
 	#------------------------------------------------------------------------
-	# find the maximum current contact nbr for this Identity:
+	# Find the maximum current contact nbr for this Identity:
 	#
 	max_contact_nbr = 0
 	for a in natmsgclib.MAIN_CONFIG[current_identity].keys():

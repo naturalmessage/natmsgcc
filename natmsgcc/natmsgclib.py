@@ -2195,21 +2195,31 @@ def nm_secure_remove(fname, passes=3):
 #  pgm_name = 'account_create'
 
 
-def nm_account_create(private_box_id=None, host=None):
-	
+def nm_account_create(private_box_id=None, host=None, requested_expire_yyyymmdd=None):
+	"""
+	The default behavior here is to create a new private box ID (Identity) and
+	one public box ID. If the user sends a private box ID, then this will add
+	one public box ID that is associated with that private box ID. 
 
-	#for the test period, all new accounts are on naturalmessage.com
+	If the expire date is specified, this will ask the server to create a new
+	public box ID with that expiration date.  You should probably specify
+	an expire date only if you also send an existing private box ID.
+	"""
+	#
+	# Note: The server has an option for "requested_expire_yyyymmdd"
+	#
+	# For the test period, all new accounts are on naturalmessage.com
 	host='https://naturalmessage.com'
 	##if host is None:
 	##	# fetch a list of hosts from serverFarm
-	##	err_nbr, sfarm = nm_server_farm_list()
+	##  
+	##	err_nbr, sfarm = nm_server_farm_list(xxx_add a filter here to select directory servers.)
 	##  idx, value = nm_menu_choice(sfarm)
 	##host = value
 
 	if private_box_id is not None:
 		rc = verify_id_format(private_box_id, expected_prefix='PRV')
 		if rc != 0:
-			### if len(private_box_id) != EXPECTED_BOX_ID_LEN or private_box_id[0:3] != 'PRV':
 			return((print_err(32400, 'The private box id does not have the ' \
 				+ 'right format: ' + private_box_id), None, None))
 
@@ -2217,12 +2227,19 @@ def nm_account_create(private_box_id=None, host=None):
 	else:	
 		url = host + '/account_create'
 
+	if requested_expire_yyyymmdd is not none:
+		if len(requested_expire_yyyymmdd) != 8:
+			return((print_err(32402, 'The requested expire yyyymmdd is not 8 bytes long: ' \
+				+ requested_expire_yyyymmdd), None, None))
+			
+		url = url + '&requested_expire_yyyymmdd=' + str(requested_expire_yyyymmdd)
+
 	r = None
 	requests.packages.urllib3.disable_warnings()
 	try:
 		# The verify=False option helps me to accept the 
 		# self-signed certificate. The user optionally authenticates
-		# the server with GPG.
+		# the server with the server verification programs.
 		r = requests.get(url, headers={'User-Agent':''}, verify=False)
 	except:
 		e = repr(sys.exc_info()[0:2])
