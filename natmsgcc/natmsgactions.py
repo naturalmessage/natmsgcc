@@ -2760,3 +2760,76 @@ def nm_view_rtf(fname):
 	return(0)
 
 ######################################################################
+def nm_add_public_box_id(current_identity):
+	"""
+	This will be used to prompt the user to add a public box 
+	ID (similar to an email ID) to an existing identity.
+	There will be an option to accept the default expiration 
+	date or a custom expiration date, but the custom date
+	must be within the legal date range (usually January 31 within
+	about 16 months of the current date).
+
+	The value for 'current_identity' looks something like this:
+
+	  Identity1
+
+	This returns zero on success or nonzero on error.
+	"""
+
+	prv_id = None # the private box ID associated with the current identity.
+	expire_yyyymmdd = None
+	id_nbr = current_identity[8:]
+
+	if not id_nbr[8:].isdigit or current_identity[0:8] != 'Identity':
+		return(natmsgclib.print_err(3945, 'The format of the Identity '\
+			+ 'passed to nm_add_public_box_id is invalid: ' + current_identity))
+
+	if current_identity not in natmsgclib.MAIN_CONFIG.keys():
+		return(natmsgclib.print_err(3946, 'The Identity '\
+			+ 'passed to nm_add_public_box_id is not registered: ' + current_identity))
+
+	# Find the 'box id index number ' for the new box ID:
+	pub_id_nbr = 1
+	while 'pubid' + str(pub_id_nbr)  in natmsgclib.MAIN_CONFIG[current_identity].keys():
+		# If the key exists, increment this number until there
+		# is no entry for that public id...
+		pub_id_nbr += 1
+
+
+	nickname = ''
+	name_key = 'identity_nickname' + str(id_nbr)
+	if name_key in natmsgclib.MAIN_CONFIG[current_identity].keys():
+		nickname =  natmsgclib.MAIN_CONFIG[current_identity][name_key]
+
+	if 'prvid' in natmsgclib.MAIN_CONFIG[current_identity].keys():
+		prv_id =  natmsgclib.MAIN_CONFIG[current_identity]['prvid']
+	else:
+		return(natmsgclib.print_err(3947, 'Could not get the '\
+			+ 'private box ID associated with ' + current_identity \
+			+ '.  This is either a programmer error or your settings are corrupt.'))
+
+	if nm_confirm(prompt='Do you want to add another box ID under ' \
+		+ current_identity + ' ' + nickname + '? (y/n): '):
+		if nm_confirm(prompt='Do you want to set a custom expiration date? ' \
+			+ 'For example, if you are going to post this ID online, you might ' \
+			+ 'want to set the expiration date for next month to reduce Spam. ' \
+			+ 'Messages will not be forwarded to the new ID after the expiration ' \
+			+ 'date.\nUse a custom expiration date for the new box ID? (y/n): '):
+			expire_yyyymmdd = input('Enter the YYYYMMDD expiration date: ')
+
+			err_nbr, prv_id2, pub_id2 = nm_account_create(private_box_id=prv_id,
+				requested_expire_yyyymmdd=expire_yyyymmdd)
+			if err_nbr != 0:
+				print_err(err_nbr, 'Failed to create the box ID.  Try again in ' \
+					+ '10 minutes.')
+			else:
+				config_txt = nm_encrypt_local_txt(pub_id2, natmsgclib.SESSION_PW)
+				MAIN_CONFIG[current_identity]['pubid' + str(pub_id_nbr)] = config_txt
+		
+				nickname = input_and_confirm('Enter a nickname for the new box ID (this is ' \
+					+ 'never sent to any server)' + os.linesep + ': ')
+				if nickname is not None:
+					config_txt = nm_encrypt_local_txt(nickname, natmsgclib.SESSION_PW)
+					MAIN_CONFIG[current_identity]['nickname' + str(pub_id_nbr)] = config_txt
+
+	return(0)

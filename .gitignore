@@ -1,0 +1,5 @@
+*.swp
+dist
+dist/*
+natmsgcc.egg-info
+natmsgcc.egg-info/*
