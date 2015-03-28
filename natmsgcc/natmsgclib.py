@@ -1931,7 +1931,6 @@ def nm_inbox_read(host, port_nbr, private_box_id=None, smd_id=None, save_dir=Non
 			+ private_box_id
 	else:
 		url = host + ':' + str(port_nbr) +  '/inbox_read?email_smd_id=' + smd_id 
-		input('=== once url for old school ' + url)
 
 	# The counter is used to compare to max_reads:
 	inbox_count = 0
@@ -2259,9 +2258,6 @@ def nm_account_create(private_box_id=None, host=None, requested_expire_yyyymmdd=
 
 
 	
-	print('==== once 1 r json ' + repr(r))
-	print('==== once 1 r json ' + repr(r.text))
-	print('==== once 2 r json ' + repr(r.json()))
 	PUB_ID_UT = None
 	PRV_ID_UT = None
 	if r is not None:
@@ -3388,15 +3384,8 @@ def nm_set_pgm_opt(opt_key, pgm_list, prompt1, prompt2):
 	options_changed = False
 
 	if not opt_key in MAIN_CONFIG['SETTINGS'].keys():
-		print('=== once setting blank pgm for '+ opt_key)
 		options_changed = True
 		MAIN_CONFIG['SETTINGS'][opt_key] = ''
-
-	print('=== once before fetch for ' + opt_key)
-	for x in MAIN_CONFIG['SETTINGS'].keys():
-		print('==== once key is ' + x)
-
-	print('=== once unrtf value ' +  MAIN_CONFIG['SETTINGS'][opt_key])
 
 	pgm_encrypted = MAIN_CONFIG['SETTINGS'][opt_key]
 	
@@ -3426,7 +3415,6 @@ def nm_set_pgm_opt(opt_key, pgm_list, prompt1, prompt2):
 
 	if MAIN_CONFIG['SETTINGS'][opt_key] == '':
 		# There is not a valid entry for unrtf, so make one
-		print('=== once searching for the pgm ')
 		paths = []
 		for ppp in pgm_list:
 			paths.append( os.path.join(os.path.sep, 'usr', 'bin', ppp))

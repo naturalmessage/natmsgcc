@@ -841,8 +841,6 @@ def read_inbox(fetch_id, private_box_id=None, old_school_link=None,  max_shard_c
 		for t in decoded_opts:
 			old_school_opts.extend(t.split('&'))
 
-		print('==== orig ' + str(tmp))
-		input('=== once old school parsed opts ' + str(old_school_opts))
 		smd_id = old_school_opts[1]
 		port_nbr = old_school_opts[3]
 		host = 'https://' + old_school_opts[5]
@@ -2142,10 +2140,8 @@ def nm_select_contact(prompt='Select a destination box ID (enter a number): ',
 
 	if identity_nbr is None:
 		current_identity = natmsgclib.MAIN_CONFIG['SETTINGS']['current_identity']
-		print('=== once current id from config is ' + current_identity)
 	else:
 		current_identity = 'Identity' + str(identity_nbr)
-		print('=== once current id from default ' + current_identity)
 
 	# Note: The contact dict has entries like this:
 	#     {'*my main box id PUB123123.....123312': {'id_nbr': 7, 'box_id': PUB....}}
@@ -2821,11 +2817,8 @@ def nm_add_public_box_id(current_identity, expire_yyyymmdd=None, batch=False):
 
 				expire_yyyymmdd = input('Enter the YYYYMMDD expiration date: ')
 
-		print('=== once checkpoint 1')
 		err_nbr, prv_id2, pub_id2 = natmsgclib.nm_account_create(private_box_id=prv_id,
 			requested_expire_yyyymmdd=expire_yyyymmdd)
-
-		print('=== once checkpoint 2')
 
 		if err_nbr != 0:
 			
