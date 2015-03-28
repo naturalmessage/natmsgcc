@@ -2195,7 +2195,8 @@ def nm_secure_remove(fname, passes=3):
 #  pgm_name = 'account_create'
 
 
-def nm_account_create(private_box_id=None, host=None, requested_expire_yyyymmdd=None):
+def nm_account_create(private_box_id=None, host=None, requested_expire_yyyymmdd=None,
+	batch=False):
 	"""
 	The default behavior here is to create a new private box ID (Identity) and
 	one public box ID. If the user sends a private box ID, then this will add
@@ -2204,6 +2205,8 @@ def nm_account_create(private_box_id=None, host=None, requested_expire_yyyymmdd=
 	If the expire date is specified, this will ask the server to create a new
 	public box ID with that expiration date.  You should probably specify
 	an expire date only if you also send an existing private box ID.
+
+	This returns a tuple: (err_nbr, private_id, public_id)
 	"""
 	#
 	# Note: The server has an option for "requested_expire_yyyymmdd"
@@ -2227,7 +2230,7 @@ def nm_account_create(private_box_id=None, host=None, requested_expire_yyyymmdd=
 	else:	
 		url = host + '/account_create'
 
-	if requested_expire_yyyymmdd is not none:
+	if requested_expire_yyyymmdd is not None:
 		if len(requested_expire_yyyymmdd) != 8:
 			return((print_err(32402, 'The requested expire yyyymmdd is not 8 bytes long: ' \
 				+ requested_expire_yyyymmdd), None, None))
@@ -2255,9 +2258,28 @@ def nm_account_create(private_box_id=None, host=None, requested_expire_yyyymmdd=
 				+ 'there is a firewall problem or network problem... ' + e), None, None))
 
 
+	
+	print('==== once 1 r json ' + repr(r))
+	print('==== once 1 r json ' + repr(r.text))
+	print('==== once 2 r json ' + repr(r.json()))
+	PUB_ID_UT = None
+	PRV_ID_UT = None
 	if r is not None:
-		PUB_ID_UT = r.json()['account_create']['public_box_id']
-		PRV_ID_UT = r.json()['account_create']['private_box_id']
+		if 'account_create' in r.json().keys():
+			if 'Error' in r.json()['account_create'].keys():
+				print('The server reported an error while creating the box ID.')
+				print(str(r.json()['account_create']['Error']))
+				input('Press any key to continue.')
+				return((35983, None, None))
+			if 'private_box_id' in r.json()['account_create'].keys():
+				PUB_ID_UT = r.json()['account_create']['public_box_id']
+				PRV_ID_UT = r.json()['account_create']['private_box_id']
+			else:
+				print('the json from the server did not contain the expected keys: ' \
+					+ str(r.json()))
+		else:
+			print('the json from the server did not contain the expected keys: ' \
+				+ str(r.json()))
 
 	return((0, PRV_ID_UT, PUB_ID_UT))
 ############################################################
@@ -2310,7 +2332,7 @@ def nm_remove_temp_dir(tmp_dir):
 
 def nm_archiver2(action='c', arch_fname=None, message_included=False,
 	f_list=None, output_dir=None, strip_path=True,
-	ballast_included=False, 
+	ballast_included=False, batch=False,
 	extract_attachments=False,
 	skip_existing=True, clobber='Prompt'):
 	'''
@@ -2583,7 +2605,7 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
 								+ 'try the skip-existing option to ignore this error).', None))
 						elif file_exists and clobber == 'p':
 							if nm_confirm('Do you want to overwrite this file: ' \
-								+ fname_out + ': '):
+								+ fname_out + ': ', batch=batch):
 
 								extract_this_file = True
 							else:
@@ -2904,11 +2926,17 @@ def nm_fetch_directory_server_list(IPV4=False):
 ############################################################
 ############################################################
 
-def nm_confirm(prompt='Do you want continue? (y/n): '):
+def nm_confirm(prompt='Do you want continue? (y/n): ', batch=False):
 	"""
 	Asks if the user wants to continue.  Returns True if yes.
+
+	If batch is set to True, this does not prompt the user and
+	simply returns True.
 	"""
 	
+
+	if batch:
+		return(True)
 
 	good = False
 	while not good:
@@ -3449,18 +3477,23 @@ def nm_set_pgm_opt(opt_key, pgm_list, prompt1, prompt2):
 					
 	if options_changed:
 		# The options changed, so save to disk.
-		need_new_config_file, CONFIG_FNAME = 	nm_find_default_config_fname()
-		try:
-			fd = codecs.open(CONFIG_FNAME, 'w', 'utf-8')
-			MAIN_CONFIG.write(fd)
-			fd.close()
-		except:
-			print_err(37555, 'Could not save the configuration file.  ' \
-				+ 'This is a serious error.  ' \
-				+ 'Check permissions to the home directory, and check free disk ' \
-				+ 'space. The filename was ' + CONFIG_FNAME) 
+		rc = nm_write_config()
+		if rc != 0:
+			print('There was an error writing the changes to disk.')
 			input('Press any key to continue...')
-			return(37555)
+
+		###need_new_config_file, CONFIG_FNAME = 	nm_find_default_config_fname()
+		###try:
+		###	fd = codecs.open(CONFIG_FNAME, 'w', 'utf-8')
+		###	MAIN_CONFIG.write(fd)
+		###	fd.close()
+		###except:
+		###	print_err(37555, 'Could not save the configuration file.  ' \
+		###		+ 'This is a serious error.  ' \
+		###		+ 'Check permissions to the home directory, and check free disk ' \
+		###		+ 'space. The filename was ' + CONFIG_FNAME) 
+		###	input('Press any key to continue...')
+		###	return(37555)
 
 	return(0)
 #####################################################################
@@ -3976,9 +4009,10 @@ def nm_create_config_file(homedir):
 	return((0, CONFIG_FNAME))
 ############################################################
 
-def nm_write_config(v=None):
+def nm_write_config():
 	"""
-	Write the MAIN_CONFIG settings to disk.
+	Make an archive copy of the existing config (settings) file and
+	then write the MAIN_CONFIG settings to disk.
 
 	This returns 0 on success.  If the global value for
 	CONFIG_FNAME was not set, this will attempt to set

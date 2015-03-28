@@ -2760,7 +2760,7 @@ def nm_view_rtf(fname):
 	return(0)
 
 ######################################################################
-def nm_add_public_box_id(current_identity):
+def nm_add_public_box_id(current_identity, expire_yyyymmdd=None, batch=False):
 	"""
 	This will be used to prompt the user to add a public box 
 	ID (similar to an email ID) to an existing identity.
@@ -2802,34 +2802,49 @@ def nm_add_public_box_id(current_identity):
 		nickname =  natmsgclib.MAIN_CONFIG[current_identity][name_key]
 
 	if 'prvid' in natmsgclib.MAIN_CONFIG[current_identity].keys():
-		prv_id =  natmsgclib.MAIN_CONFIG[current_identity]['prvid']
+		prv_id_enc =  natmsgclib.MAIN_CONFIG[current_identity]['prvid']
+		prv_id = natmsgclib.nm_decrypt_local_txt(prv_id_enc, natmsgclib.SESSION_PW)
 	else:
 		return(natmsgclib.print_err(3947, 'Could not get the '\
 			+ 'private box ID associated with ' + current_identity \
 			+ '.  This is either a programmer error or your settings are corrupt.'))
 
-	if nm_confirm(prompt='Do you want to add another box ID under ' \
-		+ current_identity + ' ' + nickname + '? (y/n): '):
-		if nm_confirm(prompt='Do you want to set a custom expiration date? ' \
-			+ 'For example, if you are going to post this ID online, you might ' \
-			+ 'want to set the expiration date for next month to reduce Spam. ' \
-			+ 'Messages will not be forwarded to the new ID after the expiration ' \
-			+ 'date.\nUse a custom expiration date for the new box ID? (y/n): '):
-			expire_yyyymmdd = input('Enter the YYYYMMDD expiration date: ')
-
-			err_nbr, prv_id2, pub_id2 = nm_account_create(private_box_id=prv_id,
-				requested_expire_yyyymmdd=expire_yyyymmdd)
-			if err_nbr != 0:
-				print_err(err_nbr, 'Failed to create the box ID.  Try again in ' \
-					+ '10 minutes.')
-			else:
-				config_txt = nm_encrypt_local_txt(pub_id2, natmsgclib.SESSION_PW)
-				MAIN_CONFIG[current_identity]['pubid' + str(pub_id_nbr)] = config_txt
+	if natmsgclib.nm_confirm(prompt='Do you want to add another box ID under ' \
+		+ current_identity + ' ' + nickname + '? (y/n): ', batch=batch):
 		
-				nickname = input_and_confirm('Enter a nickname for the new box ID (this is ' \
-					+ 'never sent to any server)' + os.linesep + ': ')
-				if nickname is not None:
-					config_txt = nm_encrypt_local_txt(nickname, natmsgclib.SESSION_PW)
-					MAIN_CONFIG[current_identity]['nickname' + str(pub_id_nbr)] = config_txt
+		if expire_yyyymmdd is None and not batch:
+			if natmsgclib.nm_confirm(prompt='Do you want to set a custom expiration date? ' \
+				+ 'For example, if you are going to post this ID online, you might ' \
+				+ 'want to set the expiration date for next month to reduce Spam. ' \
+				+ 'Messages will not be forwarded to the new ID after the expiration ' \
+				+ 'date.\nUse a custom expiration date for the new box ID? (y/n): ', batch=batch):
+
+				expire_yyyymmdd = input('Enter the YYYYMMDD expiration date: ')
+
+		print('=== once checkpoint 1')
+		err_nbr, prv_id2, pub_id2 = natmsgclib.nm_account_create(private_box_id=prv_id,
+			requested_expire_yyyymmdd=expire_yyyymmdd)
+
+		print('=== once checkpoint 2')
+
+		if err_nbr != 0:
+			
+			print( 'Failed to create the box ID.  Try again in 10 minutes. Error: ' \
+				+ str(err_nbr))
+			input('Press any key to continue...')
+			return(34954)
+			
+		else:
+			config_txt = natmsgclib.nm_encrypt_local_txt(pub_id2, natmsgclib.SESSION_PW)
+			natmsgclib.MAIN_CONFIG[current_identity]['pubid' + str(pub_id_nbr)] = config_txt
+	
+			nickname = natmsgclib.input_and_confirm('Enter a nickname for the new box ID (this is ' \
+				+ 'never sent to any server)' + os.linesep + ': ')
+			if nickname is not None:
+				config_txt = natmsgclib.nm_encrypt_local_txt(nickname, natmsgclib.SESSION_PW)
+				natmsgclib.MAIN_CONFIG[current_identity]['nickname' + str(pub_id_nbr)] = config_txt
+
+			# Save config to disk -- To Do: maybe make a backup of config
+			natmsgclib.nm_write_config()
 
 	return(0)

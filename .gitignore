@@ -1,5 +1,7 @@
 *.swp
+n.py
 dist
+natmsgcc/__pycache__/
 dist/*
 natmsgcc.egg-info
 natmsgcc.egg-info/*

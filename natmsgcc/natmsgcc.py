@@ -413,7 +413,7 @@ def main():
 			elif choice == 7:
 				natmsgactions.nm_delete_contact()
 			elif choice == 8:
-				test = natmsgactions.nm_add_public_box_id()
+				test = natmsgactions.nm_add_public_box_id(current_identity)
 			elif choice == 9:
 				test = natmsgactions.nm_edit_settings()
 			elif choice == 10:
