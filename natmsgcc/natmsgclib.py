@@ -808,7 +808,7 @@ class thread_shard_receive(threading.Thread):
 ########################################################################
 def nm_verify_server_files(nonce, nonce_signature, 
 	fname_server_online_pub_key, fname_server_offline_pub_key,
-	fname_signed_online_key):
+	fname_signed_online_key, verify_pgm_name='nm_verify'):
 	"""
 	This can be called by most of the server-related methods that pass
 	a nonce to a Natural Message directory server and ask the server to 
@@ -872,16 +872,20 @@ def nm_verify_server_files(nonce, nonce_signature,
 	fname_nonce_sig = tempfile.mktemp(prefix='natmsg-tmpver-')
 
 	# Check the signature on the nonce.
-	pid = subprocess.Popen(['./nm_verify', '--in', fname_nonce, '--signature', fname_nonce_sig,
-		'--key', fname_server_online_pub_key], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	pid = subprocess.Popen([verify_pgm_name, '--in', fname_nonce,
+		'--signature', fname_nonce_sig,
+		'--key', fname_server_online_pub_key], stdin=subprocess.PIPE,
+		stdout=subprocess.PIPE)
 	rc = pid.wait()
 	if rc != 0:
 		# not verified
 		return(26000)	
 
 	# Now check the signature on the nonce.
-	pid = subprocess.Popen(['./nm_verify', '--in', fname_server_online_pub_key, '--signature', fname_signed_online_key,
-		'--key', fname_server_offline_pub_key], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	pid = subprocess.Popen(['./nm_verify', '--in', fname_server_online_pub_key,
+		'--signature', fname_signed_online_key,
+		'--key', fname_server_offline_pub_key], stdin=subprocess.PIPE,
+		stdout=subprocess.PIPE)
 	rc = pid.wait()
 	if rc != 0:
 		# not verified
@@ -891,6 +895,7 @@ def nm_verify_server_files(nonce, nonce_signature,
 	for f in fnames:
 		os.remove(f)
 
+	return(0)
 
 ########################################################################
 ########################################################################
@@ -2828,7 +2833,8 @@ def nm_archiver2_attach_files(fname_list, fd_out, item_types, strip_path=True,
 def nm_fetch_server_farm():
 	"""
 	This will fetch a list of shard servers and directory servers
-	from naturalmessage.com (using DNS).
+	from naturalmessage.com (using DNS) and return a tuple with
+	(err_nbr, server_farm_dictionary_object).
 	
 	This will eventually be updated to grab data from several
 	Internet and local sources.

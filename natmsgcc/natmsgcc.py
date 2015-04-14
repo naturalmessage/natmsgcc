@@ -78,17 +78,12 @@ def usage():
 	sys.exit(1)
 
 
-def main():
+def main(action=None, batch=False, dest_public_box_id=None, msg_rtf_fname=None, sender_public_box_id=None, subject=None):
+
 	natmsgactions.nm_clear_screen()
 
-	action = None
-	argv_idx = 1
-	batch = False
-	dest_public_box_id = None
-	msg_rtf_fname = None
-	sender_public_box_id = None
-	subject = None
 	verbosity = 0
+	argv_idx = 1
 
 	try:
 		optlist, args = getopt.getopt(sys.argv[1:] \

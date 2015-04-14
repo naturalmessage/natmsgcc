@@ -13,9 +13,23 @@ command line client.
 
 The easiest installation process on tested platforms would be to download
 and run the NatMsgInstaller.py, which will also install dependencies.
-I will post that program as a separate project.
+Download the script from here:
 
-The Python 3 programs in thei project  require other things that are not 
+  wget https://raw.githubusercontent.com/naturalmessage/natmsgccInstall/master/NatMsgInstall.py
+
+On Linux, BSD, etc, run:
+	sudo python3 NatMsgInstall.py
+
+On Windows, if you have Python 3 in your search path, run
+	python NatMsgInstall.py
+
+If you want to see the full installer package you can download the tar.gz file or the .zip file:
+
+  wget https://github.com/naturalmessage/natmsgccInstall/archive/master.tar.gz
+
+  wget https://github.com/naturalmessage/natmsgccInstall/archive/master.zip
+
+The Python 3 programs in this project require other things that are not 
 installed here... If the NatMsgInstaller.py program does not work on your
 system, you can install these (check the NatMsgInstaller.py program for the
 latest version of each, especially on Windows):
