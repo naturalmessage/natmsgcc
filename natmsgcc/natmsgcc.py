@@ -186,11 +186,13 @@ def main(action=None, batch=False, dest_public_box_id=None, msg_rtf_fname=None, 
 			sys.exit(9834) 
 		
 		TIME_STAMP_F=datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S.%f")[0:18]
+		# Mail_DIR and current identity are not encrypted and can be opened in batch.
 		MAIL_DIR = natmsgclib.MAIN_CONFIG['SETTINGS']['mail_dir']
+		current_identity = natmsgclib.MAIN_CONFIG['SETTINGS']['current_identity']
 		# The outbound_staging_dir is a temporary directory, and my 
 		# routine to erase temp directories requries that the name
 		# contains the strings 'tmp' or 'temp':
-		outbound_staging_dir = os.path.join(MAIL_DIR, current_identity, 'outgoing' ,
+		outbound_staging_dir = os.path.join(MAIL_DIR, current_identity, 'outgoing',
 			'tmp_' + TIME_STAMP_F)
 
 		##outbound_staging_dir = tempfile.mktemp(prefix='nm_tmp-',
@@ -282,14 +284,16 @@ def main(action=None, batch=False, dest_public_box_id=None, msg_rtf_fname=None, 
 			elif choice == 0:
 				# Check for new messages
 				TIME_STAMP_F=datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S.%f")[0:18]
-				##DAY_STAMP = datetime.datetime.utcnow().strftime('%Y%m%d') # for inbox directory
 				# For inbox subdirectory:
 				TIME_STAMP_SHORT = datetime.datetime.utcnow().strftime('%H%M%S') 
 
-				enc_prv_id = bytes(natmsgclib.MAIN_CONFIG[current_identity]['prvid'], 'utf-8')
-				prv_id = natmsgclib.nm_decrypt_local_txt(enc_prv_id, natmsgclib.SESSION_PW)
+				enc_prv_id = bytes(natmsgclib.MAIN_CONFIG[current_identity]['prvid'],
+					'utf-8')
+				prv_id = natmsgclib.nm_decrypt_local_txt(enc_prv_id,
+					natmsgclib.SESSION_PW)
 				if prv_id is not None:
-					rc = natmsgactions.read_inbox(private_box_id=prv_id, fetch_id=TIME_STAMP_F)
+					rc = natmsgactions.read_inbox(private_box_id=prv_id,
+						fetch_id=TIME_STAMP_F)
 				else:
 					rc = natmsgclib.print_err(8473, 'Could not decrypt the private box ID ' \
 						+ 'to fetch the inbox contents.')
@@ -305,7 +309,6 @@ def main(action=None, batch=False, dest_public_box_id=None, msg_rtf_fname=None, 
 			elif choice == 1:
 				# Receive a message that was sent over old-school email
 				TIME_STAMP_F=datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S.%f")[0:18]
-				##DAY_STAMP = datetime.datetime.utcnow().strftime('%Y%m%d') # for inbox directory
 				# For inbox subdirectory:
 				TIME_STAMP_SHORT = datetime.datetime.utcnow().strftime('%H%M%S') 
 				good = True
@@ -324,9 +327,11 @@ def main(action=None, batch=False, dest_public_box_id=None, msg_rtf_fname=None, 
 					print('Error. The link is too long')
 					time.sleep(1)
 				else:
-					rc = natmsgactions.read_inbox(old_school_link=old_school, fetch_id=TIME_STAMP_F)
+					rc = natmsgactions.read_inbox(old_school_link=old_school,
+						fetch_id=TIME_STAMP_F)
 					if rc != 0:
-						# There was a problem reading mail, pause and return to the main menue.
+						# There was a problem reading mail, pause and return 
+						# to the main menue.
 						natmsgclib.print_err(8473, 'Could read the message.')
 						junk = input('Check your Internet connection and try again later.' \
 							+ os.linesep + 'Press any key to continue.')
@@ -342,11 +347,9 @@ def main(action=None, batch=False, dest_public_box_id=None, msg_rtf_fname=None, 
 				# The outbound_staging_dir is a temporary directory, and my 
 				# routine to erase temp directories requries that the name
 				# contains the strings 'tmp' or 'temp':
-				outbound_staging_dir = os.path.join(MAIL_DIR, current_identity, 'outgoing' ,
-					'tmp_' + TIME_STAMP)
+				outbound_staging_dir = os.path.join(MAIL_DIR, current_identity,
+					'outgoing', 'tmp_' + TIME_STAMP)
 
-				##outbound_staging_dir = tempfile.mktemp(prefix='nm_tmp-', dir=MAIL_DIR \
-				##	+ os.sep + 'tmp')
 				try:
 					os.makedirs(outbound_staging_dir, mode=0o700)
 				except:
@@ -369,11 +372,9 @@ def main(action=None, batch=False, dest_public_box_id=None, msg_rtf_fname=None, 
 				# The outbound_staging_dir is a temporary directory, and my 
 				# routine to erase temp directories requries that the name
 				# contains the strings 'tmp' or 'temp':
-				outbound_staging_dir = os.path.join(MAIL_DIR, current_identity, 'outgoing' ,
-					'tmp_' + TIME_STAMP)
+				outbound_staging_dir = os.path.join(MAIL_DIR, current_identity,
+					'outgoing', 'tmp_' + TIME_STAMP)
 
-				##outbound_staging_dir = tempfile.mktemp(prefix='nm_tmp-', dir=MAIL_DIR \
-				##	+ os.sep + 'tmp')
 				try:
 					os.makedirs(outbound_staging_dir, mode=0o700)
 				except:
@@ -392,12 +393,15 @@ def main(action=None, batch=False, dest_public_box_id=None, msg_rtf_fname=None, 
 
 				if old_school_link is not None:
 					print(os.linesep + os.linesep + os.linesep)
-					print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -')
+					print('- - - - - - - - - - - - - - - - - - - - - - - - - - ' \
+						+ '- - - - - - - -')
 					print('             Copy the text an the link between the lines')
 					print('             and send them in an email to whomever you like.')
-					print('====================================================================')
+					print('====================================================' \
+						+ '================')
 					input(str(old_school_link))
-					print('====================================================================')
+					print('====================================================' \
+						+ '================')
 
 			elif choice == 4:
 				natmsg_offline_reader.main()
@@ -423,6 +427,7 @@ def main(action=None, batch=False, dest_public_box_id=None, msg_rtf_fname=None, 
 				### fd.close()
 				### print('editted file is ' + test)
 	
+	return(0)
 # ------------------------------------------------------
 # ------------------------------------------------------
 # ------------------------------------------------------

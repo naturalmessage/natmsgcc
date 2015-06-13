@@ -775,7 +775,7 @@ class thread_shard_receive(threading.Thread):
 				# cleanup after any exception
 	
 				if self.fd_fileout:
-					os.fsync(fd_fileout.fileno())
+					os.fsync(self.fd_fileout.fileno())
 					self.fd_fileout.close()
 				if self.shard_fd:
 					# shard_fd is a BytesIO object is is being read---no fsync needed
@@ -2854,7 +2854,7 @@ def nm_fetch_server_farm():
 		pass
 
 	## TEMPORARILY HARD-CODED
-	url = 'https://naturalmessage.com/serverFarm'
+	url = 'https://naturalmessage.com/json/serverFarm.json'
 	r = None
 	requests.packages.urllib3.disable_warnings()
 	try:
