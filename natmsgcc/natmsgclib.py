@@ -1,7 +1,37 @@
-# natmsgclib
+# natmsgclib.py
+#
+# A collection of functions for the Natural Message Command-Line client
+#
+###############################################################################
+# Copyright 2015 Natural Message, LLC.
+# Author: Robert Hoot (naturalmessage@fastmail.fm)
+#
+# This file is part of the Natural Message Command-Line Client.
+#
+# The Natural Message Command-Line Client is free software: you can
+# redistribute it and/or modify it under the terms of the GNU General
+# Public License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+#
+# Natural Message Command-Line Client is distributed in the hope that it will
+# be useful, but WITHOUT ANY WARRANTY; without even the implied
+# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Natural Message Command-Line Client.  If not,
+# see <http://www.gnu.org/licenses/>.
+###############################################################################
+"""A library of functions used for the Natural Message Command-Line Client
 
-# A collection of functions for the Natural Message command line client
-
+This module contains functions for the basic operation of the command-line
+client: Encryption; server verification; proof of work; debug messaging;
+class objects and functions for mult-threaded send and receive of shards
+(shards are pieces of messages); reading, writing, and recovering
+lost shards (using the parity block); sending messages; reading
+the inbox; creating and verifying shard IDs.
+"""
+###############################################################################
 # to do: 
 #  implement unrtf on linux and bsd, and 'textutil -cat txt fname'
 # to convert rtf to txt on mac os X
@@ -61,7 +91,14 @@ ID_CUTOFF_YYYYMMDD = int(d_tmp.strftime("%Y%m%d"))
 
 ###############################################################################
 def print_err(err_nbr, err_msg=None):
-    """Print an error number and message to stderr."""
+    """Print an error number and message to stderr.
+    
+    Positional (required) arguments:
+    err_nbr -- An error number.
+    
+    Keyword arguments:
+    err_msg -- Text to display.
+    """
     if err_msg is None:
         print('Error ' + "%05d" % err_nbr, file=sys.stderr)
     else:
@@ -91,6 +128,15 @@ def debug_msg(test_val, msg):
     For verbosity messages of level 1, 2, 3, the message will print
     as specified, but for higher level verbosity, a prefix of "DEBUG "
     will be added to the message.
+
+    Positional arguments:
+    test_val -- A numeric value (usually 1-10).  If this number is 
+        greater than or equal to the global verbosity level, then
+        print the message.
+    
+    Keyword arguments:
+    msg -- The message to display.
+
     """
     
     if 'SETTINGS' not in MAIN_CONFIG:
@@ -122,6 +168,13 @@ def validate_id_chars(id_chunk):
     This will take the portion of a box_id/shard_id (excluding the prefix)
     and confirm that the characters are 0-9 or A-F (or a-f). Each program 
     should upcase the box_id to standardize appearance.
+
+    Positional arguments:
+    id_chunk -- The portion of the ID that contains the random characters
+        (do not include the prefix of the ID).
+
+    Returns: 
+    0 if good, otherwise nonzer.
     """
     
     out_msg = {}
@@ -152,6 +205,18 @@ def verify_id_format(id, expected_prefix, version=1):
     If the format looks good, this will return 0.  If the
     box ID has expired, this will return 1.  If there
     is another error, this will return something greater than 100.
+
+    Positional arguments:
+    id -- The ID to verify.
+    expected_prefix -- The prefix (e.g., PRV, PUB, SID, SMD..).
+
+    Keyword arguments:
+    version -- If the structure of the IDs changes, then code
+        this with a different number.  Default value is the current
+        version (1).
+
+    Return value:
+    0 on success, else nonzero.
     """
 
     # Function:
@@ -261,12 +326,11 @@ def verify_id_format(id, expected_prefix, version=1):
     debug_msg(5, 'At the end of nm_verify_id_format')
     return(0)
 
+
 ###############################################################################
 #
 # TO DO:
 #  1) get the POW parameters from the natural message server.
-
-
 def pow_target_bits(file_size, pow_factor, bit_constant, min_bits):
     """Show the number of bits for Proof of Work for a given file size.
 
@@ -277,6 +341,18 @@ def pow_target_bits(file_size, pow_factor, bit_constant, min_bits):
     operator will change the requirements a few times
     in one day or that the parameters will stay the same
     all year.
+
+    Positional arguments:
+    file_size -- The size of the payload being sent to a shard server.
+    pow_factory -- A scaling factor used in the proof of work calcuation.
+        Shard servers can set their own parameters to require more or less
+        proof of work.
+    bit_constant -- The intercept in the proof of work calculatoin.
+    min_bits -- The minimun number of bits required by the shard server 
+        for proof of work.
+
+    Return value:
+    Number of bits needed for this proof of work for a file of the given size.
     """
     
     # Find the log, base 2, of the file size:
@@ -292,8 +368,8 @@ def pow_target_bits(file_size, pow_factor, bit_constant, min_bits):
 
     return(target_bits)
 
-###############################################################################
 
+###############################################################################
 class RNCrypt_bob(RNCryptor.RNCryptor):
     """RNCryptor AES256 adapted for Python3.
 
@@ -307,6 +383,12 @@ class RNCrypt_bob(RNCryptor.RNCryptor):
     is used by RNCryptor and the Mac OS X client.
 
     Bob added 'decrypt_to_str' and set it disable str conversion.
+
+    Positional arguments for initialization:
+    data = a Python bytes object with the thing to be encrypted.
+
+    Keyword arguments for initialization:
+    decrypt_to_str -- Leave this at the default value of False.
     """
     def post_decrypt_data(self, data, decrypt_to_str=False):
         """ 
@@ -380,11 +462,26 @@ class RNCrypt_zero(RNCryptor.RNCryptor):
         import hmac # for KDF
         import hashlib # for KDF
         from Crypto.Protocol import KDF
-
     """
     def _pbkdf2(self, password, salt, iterations=0, key_length=32):
-        return KDF.PBKDF2(password, salt, dkLen=key_length, count=iterations,
-        prf=lambda p, s: hmac.new(p, s, hashlib.sha256).digest())
+        """
+        Positional arguments:
+        password -- A bytes object.
+        salt -- Salt for AES encryption. 
+        dkLen -- Key length ???.
+        count -- number of hash iterations used to strengthen the password.
+            Once you start using a value, do not change it.
+        prf -- The function used to hash the password.
+        
+        Return value:
+        The hashed password.
+        """
+        return(KDF.PBKDF2(
+            password,
+            salt,
+            dkLen=key_length,
+            count=iterations,
+            prf=lambda p, s: hmac.new(p, s, hashlib.sha256).digest()))
 
     def post_decrypt_data(self, data, decrypt_to_str=False):
         """Removes useless symbols related to padding for AES (PKCS#7)."""
@@ -401,6 +498,7 @@ class RNCrypt_zero(RNCryptor.RNCryptor):
         return (data)
 
     def decrypt(self, data, password, decrypt_to_str=False):
+        """Decrypt something that was encrypted with this clas."""
         data = self.pre_decrypt_data(data)
         # Bob expanded the old 'to_bytes' this to avoid
         # copying the setup macros
@@ -425,20 +523,35 @@ class RNCrypt_zero(RNCryptor.RNCryptor):
 
         decrypted_data = self._aes_decrypt(encryption_key, iv, cipher_text)
 
-        return self.post_decrypt_data(
+        return(self.post_decrypt_data(
             decrypted_data,
-            decrypt_to_str=decrypt_to_str)
+            decrypt_to_str=decrypt_to_str))
 
 ###############################################################################
 class ShardSendQueueArgs(object):
     """Hold arguments that go into the shard-send queue.
 
     This class will hold data that is queued for the shard-read process.
-    The content includes data needed to send a shard.
+    The content includes data needed to send a shard. A list of objects
+    of this class will be sent to nm_send_shards(), and ultimately
+    it is thread_shard_send.run() that will process the data in this object.
 
     Maybe send EITHER cargo_bytes or input_fname.
-    """
 
+    Keyword arguments for initialization:
+    web_host -- the first part of the URL, like https://123.456.789:4430.
+    shard_id -- a shard ID from nm_gen_shard_id().
+    cargo_bytes -- A Python bytes object with the payload. Specify either
+        this or input_fpath.
+    input_fpath -- The input directory that contains shards to send. Specify
+        either this or cargo_bytes.
+    wrk_dir -- A work directory where all shards in a message are stored. This
+        directory will be used for temporary storage and the status files 
+        while the message is being sent.
+    add_proof_of_work -- Boolean.  Truee if the shard server requires proof
+        of work.
+ 
+    """
     def __init__(self, web_host=None, shard_id=None, cargo_bytes=None,
     input_fpath=None, wrk_dir=None, add_proof_of_work=True):
 
@@ -474,8 +587,21 @@ class ShardSendQueueArgs(object):
 class thread_shard_send(threading.Thread):
     """A thread to send a shard to a shard server.
 
-    Arguments are passed during initialization in the forma of a
+    Arguments are passed during initialization in the form of a
     ShardSendQueueArgs object.
+
+    The sending process...
+    nm_actions.nm_send_message()
+        prepare all the arguments and directories.
+        archive the input file(s) with natmsgclib.nm_archiver2().
+        nm_actions.shard_and_send()
+            nm_actions.nm_send_shards()
+                start thread_shard_send
+                put data into a ShardSendQueueArgs, which will
+                execute thread_shard_send.run()
+
+    Positional arguments during initialization:
+    A ShardSendQueueArgs that contains input paths other things.
     """
     def __init__(self, qa):
         # qa is my queue args class
@@ -505,7 +631,6 @@ class thread_shard_send(threading.Thread):
                 error_detail=self.err_msg)
             self.qa.task_done()  # tell the queue that the task is finished
             return(23700)
-            
      
         if self.svr_response is not None:
             # valid JSON response... check for error mesages.
@@ -753,7 +878,14 @@ class ShardReceiveQueueArgs(object):
 class thread_shard_receive(threading.Thread):
     """A thread to get shards from a shard server.
 
-    The arguments are sent in QueueArguments qa.
+    The arguments are sent in ShardRecieveQueueArguments qa.
+
+    The shard-receive process:
+
+    read_inbox()
+        unpack_metadata_files()
+            nm_recieve_shards()
+                thread_shard_receive.run()
     """
     def __init__(self, qa):
         # qa is my queue args class
@@ -891,6 +1023,7 @@ def nm_verify_server_files(nonce, nonce_signature,
     in the MAIN_CONFIG dictionary. Keys for the shard servers
     might be less likely to be reused in the future.
 
+    Positional arguments:
     nonce = ASCII text that was sent to the server to sign.
     
     nonce_signature = the detatched Natural Message signature that 
@@ -974,7 +1107,8 @@ def nm_verify_server_files(nonce, nonce_signature,
 # payload--in base64 with utf8.
 def create_shard_pow(payload_sha128, file_size, pow_factor, 
     min_bits=12, bit_constant=3):
-    """
+    """Create a proof of work signature for a shard.
+
     This creates a Proof-of-Work (POW) for a shard.  This is a feature
     that might be enforced in the future if there is a problem with abuse
     of the shard servers.  The sender would have to perform some
@@ -1170,18 +1304,31 @@ def verify_pow(nonce_hex_str, fsize, payload_sha128, pow_factor,
 ###############################################################################
 ###############################################################################
 def xor_and_write(fname_prefix=None, msg_chunks=None, out_dir=None):
-    """
+    """Create the parity block and write shards to disk.
+
     This will accept an array of data, create the parity block for them,
     then write all the files to disk using fname_prefix as the prefix
     of each filename along with a letter suffix to indicate which shard it is.
+
+    Keyword arguments:
+    fname_prefix -- A prefix for a set of temporary file names that are created
+        when the message is cut into shards.  Thos prefixes also appear on the
+        receiving end, so they should follow the prescribed values in  
+        natmsgactions.metadata_prefixes (such as _P for password shards).
+    msg_chunks -- A list object containing the shards.
+    out_dir -- A directory where the shard files will be written.
+
+    Return value:
+    0 for success, else nonzero.
     """
 
     if msg_chunks is None:
         print('Error. The msg_chunks array was not sent to xor_and_write.')
         return(27000)
 
-    if type(msg_chunks)  != type([]):
-        print('Error. The msg_chunks array was not of type array '
+    #if type(msg_chunks)  != type([]):
+    if not isinstance(msg_chunks, list):
+        print('Error. The msg_chunks array was not of type list '
             + 'in xor_and_write.')
         return(27100)
 
@@ -2367,12 +2514,8 @@ def nm_secure_remove(fname, passes=3):
 
     return(0)
         
+
 ###############################################################################
-###############################################################################
-
-#  pgm_name = 'account_create'
-
-
 def nm_account_create(private_box_id=None, host=None, requested_expire_yyyymmdd=None,
     batch=False):
     """Create a new account (public/private ID pair or just public ID).
