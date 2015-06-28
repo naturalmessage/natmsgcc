@@ -1185,9 +1185,12 @@ def create_shard_pow(
     # the number of bytes that are produced by the chosen hash algo.
     hash_len_bytes = 20
 
-    target_bits = pow_target_bits(file_size, pow_factor,
-        bit_constant, min_bits)
-    ############################################################
+    target_bits = pow_target_bits(
+        file_size,
+        pow_factor,
+        bit_constant,
+        min_bits)
+    # ##########################################################
     start_time = time.time()
 
     nonce_hex_str = ''
@@ -1229,11 +1232,12 @@ def create_shard_pow(
         nonce_hex_str = base64.b16encode(
             RNCryptor.Random.new().read(
                 int((target_bits + 2) / 8 + 1))).decode('utf-8').lower()
-        h = hashlib.sha1(b''.join(
-            [
-                payload_sha128, bytes(
-                yyyymmdd_str + nonce_hex_str, 'utf-8')
-            ])).digest()
+        h = hashlib.sha1(
+            b''.join(
+                [
+                    payload_sha128,
+                    bytes(yyyymmdd_str + nonce_hex_str, 'utf-8')
+                ])).digest()
 
         i = int().from_bytes(h, 'big')
         if mask & i == mask:
@@ -1254,30 +1258,35 @@ def create_shard_pow(
         'Found it on iter ' + str(j) + '. nonce =' + str(nonce_hex_str)
         + ' h =' + str(h) + ' elapsed time: ' + str(ellapsed_time))
 
-        # Final report:
-        # The user will submit the nonce_hex_str value as proof of work.
+    # Final report:
+    # The user will submit the nonce_hex_str value as proof of work.
     debug_msg(
         7,
         'Proof of work info: File size: ' + str(file_size) + ' bits: '
-        + str(target_bits) +  ' elapsed time: ' + str(ellapsed_time))
+        + str(target_bits) + ' elapsed time: ' + str(ellapsed_time))
 
     # I found a nonce_hex_str that can be added to the hash routine
     # to make the has have the required number of bits set to 1.
     return(nonce_hex_str)
 
 
-# ############################################################
-def verify_pow(nonce_hex_str, fsize, payload_sha128, pow_factor,
-        bit_constant, min_bits, v):
+def verify_pow(
+        nonce_hex_str,
+        fsize,
+        payload_sha128,
+        pow_factor,
+        bit_constant,
+        min_bits):
     """Verify a Proof of Work value."""
-
-    if type(nonce_hex_str) != type(''):
+    if not isinstance(nonce_hex_str, str):
         print('Error.  The nonce_hex_str needs to be of type Python str()')
         return(-12)
 
-    debug_msg(7, 'In verify_pow, the nonce_hex_str sent to verify_pow was: ' \
-            + bin(int().from_bytes(nonce_hex_str, sys.byteorder)) \
-            + ' (that nonce_hex_str is added to a string and hashed)')
+    debug_msg(
+        7,
+        'In verify_pow, the nonce_hex_str sent to verify_pow was: '
+        + bin(int().from_bytes(nonce_hex_str, sys.byteorder))
+        + ' (that nonce_hex_str is added to a string and hashed)')
 
     # Hash_len_bytes will be hard-coded and will correspond to
     # the number of bytes that are produced by the chosen hash algo.
@@ -1308,8 +1317,10 @@ def verify_pow(nonce_hex_str, fsize, payload_sha128, pow_factor,
                 bytes(
                     yyyymmdd_str + nonce_hex_str, 'utf-8'))).digest()
 
-        debug_msg(7, 'Length of hash in verify_pow is : ' + str(len(h)) \
-                + ' for ' + str(h))
+        debug_msg(
+            7,
+            'Length of hash in verify_pow is : ' + str(len(h))
+            + ' for ' + str(h))
 
         # Construct a bit mask.  It will contain
         # 1-bits in the high-order part so that the
@@ -1325,7 +1336,9 @@ def verify_pow(nonce_hex_str, fsize, payload_sha128, pow_factor,
 
         i = int().from_bytes(h, 'big')
         if mask & i == mask:
-            debug_msg(7, 'Proof of work verified with mask\n' + bin(mask) \
+            debug_msg(
+                7,
+                'Proof of work verified with mask\n' + bin(mask)
                 + '\nand hash\n' + bin(i))
 
             good = True
@@ -1368,10 +1381,9 @@ def xor_and_write(fname_prefix=None, msg_chunks=None, out_dir=None):
         print('Error. The msg_chunks array was not sent to xor_and_write.')
         return(27000)
 
-    #if type(msg_chunks)  != type([]):
     if not isinstance(msg_chunks, list):
         print('Error. The msg_chunks array was not of type list '
-            + 'in xor_and_write.')
+              + 'in xor_and_write.')
         return(27100)
 
     if fname_prefix is None:
@@ -1391,7 +1403,7 @@ def xor_and_write(fname_prefix=None, msg_chunks=None, out_dir=None):
     for c in msg_chunks:
         # Write shards to the output directory
         #
-        ##shard_letter = chr(ord('a') + output_idx)
+        # shard_letter = chr(ord('a') + output_idx)
         shard_letter = str(output_idx + 1)
 
         if out_dir is None:
@@ -1427,8 +1439,11 @@ def xor_and_write(fname_prefix=None, msg_chunks=None, out_dir=None):
 ###############################################################################
 ###############################################################################
 ###############################################################################
-def nm_write_shard_status(fname, status, return_err_nbr=0,
-    error_detail=None):
+def nm_write_shard_status(
+        fname,
+        status,
+        return_err_nbr=0,
+        error_detail=None):
     """Write status to disk for a shard that is coming or going.
 
     This will write a brief status report to a file or update an
@@ -1461,9 +1476,9 @@ def nm_write_shard_status(fname, status, return_err_nbr=0,
     return_err_nbr -- Defaults to 0.  This is the return code.
         Not sure why this is specified as an argument.
     """
-    ###global lock
+    #  global lock
 
-    output_d = {} # Staging for the JSON that this will write to disk.
+    output_d = {}  # Staging for the JSON that this will write to disk.
 
     time_stamp = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
 
@@ -1501,14 +1516,14 @@ def nm_write_shard_status(fname, status, return_err_nbr=0,
         if status.lower() == 'error':
             if 'error_count' in output_d.keys():
                 # Update the error count
-                output_d['error_count']= output_d['error_count'] + 1
+                output_d['error_count'] = output_d['error_count'] + 1
             else:
                 # Initialize the error count
                 output_d['error_count'] = 1
 
         if error_detail is not None:
             if 'first_error' not in output_d.keys():
-                output_d['first_error']= error_detail
+                output_d['first_error'] = error_detail
             else:
                 output_d['latest_error'] = error_detail
 
@@ -1525,7 +1540,7 @@ def nm_write_shard_status(fname, status, return_err_nbr=0,
             output_d['error_count'] = 1
 
     zzz = json.dumps(output_d)
-    ###lock.acquire()
+    # #lock.acquire()
     try:
         fd2 = open(fname, 'wb')
         fd2.write(bytes(zzz, 'utf-8'))
@@ -1543,9 +1558,9 @@ def nm_write_shard_status(fname, status, return_err_nbr=0,
         os.fsync(fd2.fileno())
         fd2.close()
 
-    ##### redundant file close?
-    ###os.fsync(fd2.fileno())
-    ###fd2.close()
+    # ### redundant file close?
+    # #os.fsync(fd2.fileno())
+    # #fd2.close()
 
     return(return_err_nbr)
 
@@ -1587,7 +1602,9 @@ def get_status(status_fname):
                 + str(status_fname)), None))
 
     return((0, status_json))
-#----------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------
 def show_shard_status(wrk_dir, shard_args, interval=3):
     """Display the status of shards listed in shard_args.
 
@@ -1619,7 +1636,7 @@ def show_shard_status(wrk_dir, shard_args, interval=3):
     0 on success, else nonzero.
     """
     loop_count = 0
-    completed=False
+    completed = False
     while not completed:
         status_dict = {}
         finalized_count = 0
@@ -1627,7 +1644,7 @@ def show_shard_status(wrk_dir, shard_args, interval=3):
             # For each shard_ID, verify that the status is 'sent'. If
             # status is 'failed', then resend.  If it has been more than
             # 5 minutes, resend (allow time for slow uploads?).
-            status_fname=os.path.join(wrk_dir, sa.shard_id + '.status')
+            status_fname = os.path.join(wrk_dir, sa.shard_id + '.status')
             st = None
             status_json = None
             try:
@@ -1681,7 +1698,7 @@ def show_shard_status(wrk_dir, shard_args, interval=3):
 
         if len(status_dict) == 1:
             if 'sent' in status_dict.keys() \
-                    or  'received' in status_dict.keys() \
+                    or 'received' in status_dict.keys() \
                     or 'failed' in status_dict.keys():
                 completed = True
             else:
@@ -1697,9 +1714,11 @@ def show_shard_status(wrk_dir, shard_args, interval=3):
 ###############################################################################
 ###############################################################################
 ###############################################################################
-def nm_smd_create(web_host, dest_box_id,
-    cargo_bytes=None,
-    add_proof_of_work=False):
+def nm_smd_create(
+        web_host,
+        dest_box_id,
+        cargo_bytes=None,
+        add_proof_of_work=False):
     """Create a shard metadata record to send a message.
 
     This is for creating normal shard metadata record
@@ -1732,16 +1751,20 @@ def nm_smd_create(web_host, dest_box_id,
     if dest_box_id is None:
         return((29000, {'Error': 'dest_box_id was missing in nm_smd_create.'}))
 
-    if type(cargo_bytes) != type(b'00'):
+    if not isinstance(cargo_bytes, bytes):
         return((
             29100,
             {'Error': 'Cargo_bytes sent to nm_smd_create was not in '
-            + 'python bytes() format.'}))
+             + 'python bytes() format.'}))
 
     cargo_sha1 = hashlib.sha1(cargo_bytes).digest()  # binary
 
-    nm_pow = create_shard_pow(cargo_sha1, len(cargo_bytes), pow_factor=1,
-  min_bits=12, bit_constant=3)
+    nm_pow = create_shard_pow(
+        cargo_sha1,
+        len(cargo_bytes),
+        pow_factor=1,
+        min_bits=12,
+        bit_constant=3)
 
     debug_msg(6, 'In nm_smd_create, final pow is ' + nm_pow)
 
@@ -1751,9 +1774,11 @@ def nm_smd_create(web_host, dest_box_id,
     else:
         url = web_host + '/smd_create?dest_public_box_id=' + dest_box_id
 
-    attached_files = {'shard_metadata': ('shard_metadata',
-                cargo_bytes,
-                'application/x-download', {'Expires': '0'})}
+    attached_files = {
+        'shard_metadata': (
+            'shard_metadata',
+            cargo_bytes,
+            'application/x-download', {'Expires': '0'})}
 
     r = None
     requests.packages.urllib3.disable_warnings()
@@ -1764,7 +1789,7 @@ def nm_smd_create(web_host, dest_box_id,
     except:
         err_msg = 'Faled to post shard_metadata'
         if r is not None:
-            err_msg += '  Detail' +  r.text
+            err_msg += '  Detail' + r.text
         return((29200, {'Error': 'Could not create smd record.'}))
 
     debug_msg(5, 'In nm_smd_create, url was ' + url)
@@ -1793,9 +1818,9 @@ def nm_smd_create(web_host, dest_box_id,
             try:
                 svr_response = r.json()['smd_create']
             except:
-                return((29400, {'Error': 'The response does not have ' \
+                return((29400, {
+                    'Error': 'The response does not have '
                     + 'the JSON entry for smd_create.' + str(r.text)}))
-
 
             if svr_response is not None:
                 # valid JSON response... check for error mesages.
@@ -1805,12 +1830,11 @@ def nm_smd_create(web_host, dest_box_id,
                 except:
                     pass
 
-
                 if err_response is not None:
-                    return((29500, {'Error':err_response}))
+                    return((29500, {'Error': err_response}))
                 else:
                     # good
-                    return((0,dict(svr_response)))
+                    return((0, dict(svr_response)))
 
 
 ###############################################################################
@@ -1824,11 +1848,11 @@ def nm_gen_shard_id():
     be used as the destination address for shards that are
     pushed to shard servers.  The resultign prefix is SID.
     """
-
-
-    return('SID'
+    return(
+        'SID'
         + base64.b16encode(
-            RNCryptor.Random.new().read(17)).decode('utf8').upper()[0:32])
+            RNCryptor.Random.new().read(
+                17)).decode('utf8').upper()[0:32])
 
 
 ###############################################################################
@@ -1849,8 +1873,11 @@ def nm_gen_shard_id():
 # of the data (so that python looks at the integer representation
 # of each character). I will add a pad byte if I need to make
 # the byte-count even.
-def shard_xor(action, chunks_array=None, chunks_fname_array=None,
-    recovered_shard_fname=None):
+def shard_xor(
+        action,
+        chunks_array=None,
+        chunks_fname_array=None,
+        recovered_shard_fname=None):
     """Peform XOR operations on a shard for redundancy.
 
     Action is either 'c' for Creating a parity block, or 'r' to
@@ -1995,7 +2022,7 @@ def shard_xor(action, chunks_array=None, chunks_fname_array=None,
             # For each index into the block length,
             this_byte = 0
             for k in range(block_count):
-                ###if block_sizes[k] == block_sizes[0]:
+                # #if block_sizes[k] == block_sizes[0]:
                 if j < block_sizes[k]:
                     # Get the jth byte from each block and xor them together
                     # except if it is the final chunk that has a short length,
@@ -2051,12 +2078,12 @@ def nm_slice(bytes_in, shard_count=3):
     Tuple.  On success, (pad_count, list_object_with_slices)
     else (negative_number, msg)
     """
-    if type(bytes_in) != type(bytes()):
-        print("Error.  You sent something other than a bytes() " \
-            + "object to nm_slice().")
+    if not isinstance(bytes_in, bytes):
+        print("Error.  You sent something other than a bytes() "
+              + "object to nm_slice().")
         return((-1, []))
 
-    pad_count= len(bytes_in) % shard_count
+    pad_count = len(bytes_in) % shard_count
     pad = []
     default_chunk_size = int(len(bytes_in) / shard_count)
 
@@ -2068,18 +2095,19 @@ def nm_slice(bytes_in, shard_count=3):
 
         default_chunk_size += 1
 
-    ## I am no longer padding the last shard
-    ## with zeroes because the OS X client
-    ## does not do so (we store pad_count
-    ## in encrypted form in the shard_metadata
-    ## to allow for recovery).
-    #b = b''.join([bytes_in, b''.join(pad)])
+    # I am no longer padding the last shard
+    # with zeroes because the OS X client
+    # does not do so (we store pad_count
+    # in encrypted form in the shard_metadata
+    # to allow for recovery).
+    # # b = b''.join([bytes_in, b''.join(pad)])
 
     # New version without trailing pad zeroes:
     debug_msg(5, 'Pad count is ' + str(pad_count))
     debug_msg(
         6,
-        'Length of bytes version of text: final is ' + str(len(bytes_in)))
+        'Length of bytes version of text: final is '
+        + str(len(bytes_in)))
     debug_msg(6, 'chunk size is ' + str(default_chunk_size))
     # ----------------------------------------
     #    Split the original binary data into chunks
@@ -2099,7 +2127,7 @@ def nm_slice(bytes_in, shard_count=3):
         end = (j + 1) * default_chunk_size
         debug_msg(
             5,
-            'Start and end indexes (in Python format) for getting shards: ' \
+            'Start and end indexes (in Python format) for getting shards: '
             + str(strt) + ', ' + str(end))
 
         chunks.append(bytes_in[strt: end])
@@ -2138,11 +2166,11 @@ def nm_reassemble_shards(
         4,
         '** nm_reassemble_shards fname array ' + str(shard_fname_array))
 
-    failure_count = 0 # more than one missing shard is fatal
+    failure_count = 0  # More than one missing shard is fatal.
     parity_needed = False
 
     if delete_shard_for_testing is None:
-        delete_shard_for_testing=False
+        delete_shard_for_testing = False
 
     if delete_shard_for_testing:
         # See if parity block recovery works
@@ -2192,9 +2220,8 @@ def nm_reassemble_shards(
     # Simple reassemble:
     try:
         # I will write several times to the output file,
-        # but I don't think there is any need for 'wb+'
-        ##fd_out = open(output_fname, 'wb+');
-        fd_out = open(output_fname, 'wb');
+        # but I don't think there is any need for 'wb+'.
+        fd_out = open(output_fname, 'wb')
     except:
         try:
             if fd_out:
@@ -2221,8 +2248,8 @@ def nm_reassemble_shards(
             # xxxx i get this message when the file exists!!
             # xxxx i get this message when the file exists!!
             print('WARNING (this should be a fatal errror for '
-                + 'this message): failed to open shard for reading ' \
-                + shard_fname_array[j] + '. ' + e, file=sys.stderr)
+                  + 'this message): failed to open shard for reading '
+                  + shard_fname_array[j] + '. ' + e, file=sys.stderr)
 
         else:
             try:
@@ -2230,9 +2257,9 @@ def nm_reassemble_shards(
             except:
                 e = repr(sys.exc_info()[0:2])
                 print('WARNING: failed to read shard from '
-                    + shard_fname_array[j]
-                    + ' and stream to ' + output_fname
-                    + '. ' + e, file=sys.stderr)
+                      + shard_fname_array[j]
+                      + ' and stream to ' + output_fname
+                      + '. ' + e, file=sys.stderr)
                 fd_in.close()
             else:
                 os.fsync(fd_out.fileno())
@@ -2298,12 +2325,17 @@ def nm_inbox_read(
     old_school = False
 
     if private_box_id is None and smd_id is None:
-        return(print_err(10800, 'Neither private box ID nor smd_id was ' \
+        return(print_err(
+            10800,
+            'Neither private box ID nor smd_id was '
             + 'sent to nm_inbox_read.'))
 
     if private_box_id is not None and smd_id is not None:
-        return(print_err(10801, 'Both private box ID and smd_id were ' \
-            + 'sent to nm_inbox_read -- you mus send one or the other.'))
+        return(print_err(
+            10801,
+            'Both private box ID and smd_id were '
+            + 'sent to nm_inbox_read -- you mus send '
+            + 'one or the other.'))
 
     if smd_id is not None:
         old_school = True
@@ -2335,11 +2367,11 @@ def nm_inbox_read(
 
     if private_box_id is not None:
         url = host + ':' + str(port_nbr) \
-            +  '/inbox_read?dest_private_box_id=' \
+            + '/inbox_read?dest_private_box_id=' \
             + private_box_id
     else:
         url = host + ':' + str(port_nbr) \
-            +  '/inbox_read?email_smd_id=' + smd_id
+            + '/inbox_read?email_smd_id=' + smd_id
 
     # The counter is used to compare to max_reads:
     inbox_count = 0
@@ -2358,23 +2390,27 @@ def nm_inbox_read(
             except:
                 e = repr(sys.exc_info()[0:2])
                 # Halt on server errors (but not not invalid SMD format).
-                return(print_err(31300,  'Could not get URL on first inbox read. The URL was ' \
+                return(print_err(
+                    31300,
+                    'Could not get URL on first inbox read. The URL was '
                     + url + '. ' + repr(e)))
         else:
             # Subsequent reads include the 'previous_smd_id' and session_id.
-            debug_msg(5, 'In inbox_read, subsequent read, prior smd is ' \
-                + repr(previous_smd_id))
+            debug_msg(5, 'In inbox_read, subsequent read, prior smd is '
+                      + repr(previous_smd_id))
 
             url = host + '/inbox_read?dest_private_box_id=' + private_box_id \
-                    + '&session_id=' + str(session_id) + '&previous_smd_id=' \
-                    + previous_smd_id
+                + '&session_id=' + str(session_id) + '&previous_smd_id=' \
+                + previous_smd_id
 
             try:
                 r = requests.get(url, headers={'User-Agent': ''}, verify=False)
             except:
                 e = repr(sys.exc_info()[0:2])
                 # Halt on server errors (but not not invalid SMD format).
-                return(print_err(31300, 'I could not get subsequent inbox read. ' \
+                return(print_err(
+                    31300,
+                    'I could not get subsequent inbox read. '
                     + 'The URL was ' + url + '. ' + repr(e)))
 
         if r is not None:
@@ -2428,7 +2464,7 @@ def nm_inbox_read(
             if err_msg is not None:
                 # There is an error message in the JSON,
                 # record an error and log it.
-                svr_json = None # cancel the SMD data and keep the loop going.
+                svr_json = None  # Cancel the SMD data and keep the loop going.
                 print_err(31600,  'Inbox_read failed: <' + err_msg + '>.')
             else:
                 # There was no error message, check for a misspelled error
@@ -2440,7 +2476,9 @@ def nm_inbox_read(
                 except:
                     e = repr(sys.exc_info()[0:2])
                     svr_json = None
-                    print_err(31700,   'The response does not have ' \
+                    print_err(
+                        31700,
+                        'The response does not have '
                         + 'the JSON entry for inbox_read. ' + e)
 
                 if svr_json is None:
@@ -2468,68 +2506,86 @@ def nm_inbox_read(
                             session_id = svr_json['inbox_read']['session_id']
 
                         if 'smd_id' not in svr_json['inbox_read'].keys():
-                            return(print_err(32000, 'The server did not include an smd_id ' \
-                                + 'in the JSON of a shard_metadaa record. This is a server error: ' \
-                                + url))
+                            return(print_err(
+                                32000,
+                                'The server did not include an smd_id '
+                                + 'in the JSON of a shard_metadaa record. '
+                                + 'This is a server error: ' + url))
                         else:
-                            # I do not write smd_id below, I hold it until I make the next
-                            # request
+                            # I do not write smd_id below, I hold it
+                            # until I make the next request
                             smd_id = svr_json['inbox_read']['smd_id']
                             previous_smd_id = svr_json['inbox_read']['smd_id']
 
                         if 'dest_public_box_id' not in svr_json['inbox_read']:
                             dest_public_box_id = ''
                         else:
-                            dest_public_box_id = svr_json['inbox_read']['dest_public_box_id']
+                            dest_public_box_id = \
+                                svr_json['inbox_read']['dest_public_box_id']
 
-                        if 'shard_metadata' not in svr_json['inbox_read'].keys():
+                        if 'shard_metadata' \
+                                not in svr_json['inbox_read'].keys():
                             shard_metadata = ''
                             subj_reply_to = ''
                         else:
-                            # shard_metadata is wrapped in the event that a user sends binary garbage
+                            # shard_metadata is wrapped in the event
+                            # that a user sends binary garbage
                             shard_metadata = base64.b64decode(bytes(
                                 svr_json['inbox_read']['shard_metadata'],
                                 'utf-8')).decode('utf-8')
-
-                            ##shard_metadata = svr_json['inbox_read']['shard_metadata']
 
                             if 'meta' not in json.loads(shard_metadata).keys():
                                 subj_reply_to = ''
                             else:
                                 smd_dict = json.loads(shard_metadata)
-                                # The subject and the reply to are encrypted with the first password,
+                                # The subject and the reply to are encrypted
+                                # with the first password,
                                 # which is the one that was sharded.
-                                subj_reply_to = smd_dict['meta'] # leave it as a base64 string for now.
+                                #
+                                # Leave it as a base64 string for now:
+                                subj_reply_to = smd_dict['meta']
 
                         if 'status' not in svr_json['inbox_read'].keys():
                             EOF = False
                         else:
                             if svr_json['inbox_read']['status'] == 'EOF':
                                 EOF = True
-                        #- - - - - - - - - - - - - - - - - - - -
+                        # - - - - - - - - - - - - - - - - - - -
                         # Save the smd here
-                        this_dir = save_dir + os.sep + "%04d" % (inbox_count + 1)
+                        this_dir = save_dir \
+                            + os.sep + "%04d" % (inbox_count + 1)
                         try:
-                            os.makedirs(this_dir, exist_ok=True)  # allow for recover rerun
+                            # Allow for recover rerun:
+                            os.makedirs(this_dir, exist_ok=True)
                         except:
-                            return(print_err(32100, 'Could not create the directory ' \
-                                + 'to save shard metadata.' \
+                            return(print_err(
+                                32100,
+                                'Could not create the directory '
+                                + 'to save shard metadata.'
                                 + this_dir))
 
                         if shard_metadata is not None:
-                            with open(this_dir + os.sep + 'shard_metadata_staged', 'wb') as fd:
-                                debug_msg(3, 'Writing shard metadata to ' + this_dir)
+                            with open(
+                                    this_dir + os.sep
+                                    + 'shard_metadata_staged',
+                                    'wb') as fd:
+                                debug_msg(
+                                    3,
+                                    'Writing shard metadata to ' + this_dir)
 
-                                #fd.write(base64.b64encode(bytes(shard_metadata, 'utf-8')))
                                 fd.write(bytes(shard_metadata, 'utf-8'))
                                 os.fsync(fd.fileno())
 
-
-                            # Write the dest public box ID to a file in the same place as the metadata
-                            # so that I can decrypt it after I reassmble the password shards.
+                            # Write the dest public box ID to a file
+                            # in the same place as the metadata
+                            # so that I can decrypt it after I
+                            # reassmble the password shards.
                             with open(this_dir + os.sep + 'meta2', 'wb') as fd:
-                                fd.write(bytes('{"dest":"' + dest_public_box_id  \
-                                    + '","subj_reply_to_enc":"' + subj_reply_to + '"}', 'utf-8'))
+                                fd.write(
+                                    bytes(
+                                        '{"dest":"' + dest_public_box_id
+                                        + '","subj_reply_to_enc":"'
+                                        + subj_reply_to + '"}', 'utf-8'))
                                 os.fsync(fd.fileno())
 
                                 inbox_count += 1
@@ -2564,12 +2620,11 @@ def nm_secure_remove(fname, passes=3):
     Return value:
     0 on success, else nonzero.
     """
-    blk_size=1024
+    blk_size = 1024
     fsize = os.path.getsize(fname)
     bytes_written = 0
 
     debug_msg(6, 'securely removing ' + fname)
-    #with open(fname, "ab+") as fd:
     with open(fname, "wb+") as fd:
         for idx in range(passes):
             fd.seek(0)
@@ -2583,7 +2638,7 @@ def nm_secure_remove(fname, passes=3):
                 bytes_written += len(blk)
         # The 'with' statement will close the file.
         # for erasing, fsync is probably not needed
-        ##os.fsync(fd.fileno())
+        # #os.fsync(fd.fileno())
 
     # overwrite the name with base64 characters
     fdir = os.path.dirname(fname)
@@ -2597,8 +2652,9 @@ def nm_secure_remove(fname, passes=3):
         except:
             e = repr(sys.exc_info()[0:2])
             # failed to rename file
-            return(print_err(32200, 'Failed to rename a file during deletion process: ' \
-                + fname + '. ' + e))
+            return(print_err(32200, 'Failed to rename a file '
+                   + 'during deletion process: '
+                   + fname + '. ' + e))
         old_name = new_name
 
     try:
@@ -2606,8 +2662,8 @@ def nm_secure_remove(fname, passes=3):
     except:
         e = repr(sys.exc_info()[0:2])
         # failed to remove file
-        return(print_err(32300, 'Failed to remove a file during deletion process: ' \
-            + fname +'. ' + e))
+        return(print_err(32300, 'Failed to remove a file during '
+               + 'deletion process: ' + fname + '. ' + e))
 
     return(0)
 
@@ -2648,19 +2704,13 @@ def nm_account_create(
     # Note: The server has an option for "requested_expire_yyyymmdd"
     #
     # For the test period, all new accounts are on naturalmessage.com
-    host='https://naturalmessage.com'
-    ##if host is None:
-    ##    # fetch a list of hosts from serverFarm
-    ##
-    ##    err_nbr, sfarm = nm_server_farm_list(xxx_add a filter here to select directory servers.)
-    ##  idx, value = nm_menu_choice(sfarm)
-    ##host = value
+    host = 'https://naturalmessage.com'
 
     if private_box_id is not None:
         rc = verify_id_format(private_box_id, expected_prefix='PRV')
         if rc != 0:
-            return((print_err(32400, 'The private box id does not have the ' \
-                + 'right format: ' + private_box_id), None, None))
+            return((print_err(32400, 'The private box id does not have the '
+                   + 'right format: ' + private_box_id), None, None))
 
         url = host + '/account_create?private_box_id=%s' % (private_box_id)
     else:
@@ -2668,10 +2718,13 @@ def nm_account_create(
 
     if requested_expire_yyyymmdd is not None:
         if len(requested_expire_yyyymmdd) != 8:
-            return((print_err(32402, 'The requested expire yyyymmdd is not 8 bytes long: ' \
+            return((print_err(
+                32402,
+                'The requested expire yyyymmdd is not 8 bytes long: '
                 + requested_expire_yyyymmdd), None, None))
 
-        url = url + '&requested_expire_yyyymmdd=' + str(requested_expire_yyyymmdd)
+        url = url + '&requested_expire_yyyymmdd=' \
+            + str(requested_expire_yyyymmdd)
 
     r = None
     requests.packages.urllib3.disable_warnings()
@@ -2684,22 +2737,27 @@ def nm_account_create(
         e = repr(sys.exc_info()[0:2])
         # Note: if the server is down, r will be None.
         if r is not None:
-            return((print_err(32500, 'No response from server.  Maybe it is down, maybe ' \
-                + 'there is a firewall problem or network problem... ' + e \
+            return((print_err(
+                32500,
+                'No response from server.  Maybe it is down, maybe '
+                + 'there is a firewall problem or network problem... ' + e
                 + ' -- ' + repr(r.text)), None, None))
         else:
             # Note this error could mean that the the firewall is blocking
             # ('Connection aborted.', OSError(113, 'No route to host'))
-            return((print_err(32600, 'No response from server.  Maybe it is down, maybe ' \
-                + 'there is a firewall problem or network problem... ' + e), None, None))
-
+            return((print_err(
+                32600,
+                'No response from server.  Maybe it is down, maybe '
+                + 'there is a firewall problem or network '
+                + 'problem... ' + e), None, None))
 
     PUB_ID_UT = None
     PRV_ID_UT = None
     if r is not None:
         if 'account_create' in r.json().keys():
             if 'Error' in r.json()['account_create'].keys():
-                print('The server reported an error while creating the box ID.')
+                print('The server reported an error while '
+                      + 'creating the box ID.')
                 print(str(r.json()['account_create']['Error']))
                 input('Press any key to continue.')
                 return((35983, None, None))
@@ -2707,11 +2765,13 @@ def nm_account_create(
                 PUB_ID_UT = r.json()['account_create']['public_box_id']
                 PRV_ID_UT = r.json()['account_create']['private_box_id']
             else:
-                print('the json from the server did not contain the expected keys: ' \
-                    + str(r.json()))
+                print('the json from the server did not '
+                      + 'contain the expected keys: '
+                      + str(r.json()))
         else:
-            print('the json from the server did not contain the expected keys: ' \
-                + str(r.json()))
+            print('the json from the server did not contain '
+                  + 'the expected keys: '
+                  + str(r.json()))
 
     return((0, PRV_ID_UT, PUB_ID_UT))
 
@@ -2754,27 +2814,42 @@ def nm_remove_temp_dir(tmp_dir):
             for root, dirs, files in os.walk(tmp_dir, topdown=False):
                 if len(dirs) == 0 and len(files) == 0:
                     debug_msg(5, '  removing ' + root)
-                    tmp_name = base64.b64encode(RNCryptor.Random.new().read(8)).decode('utf8')
+                    tmp_name = base64.b64encode(
+                        RNCryptor.Random.new().read(8)).decode('utf8')
                     # get rid of some symbols
-                    tmp_name = tmp_name.translate(str.maketrans({'/': 'x', '+': 'Q', '=': 'e'}))
-                    #  I THINK I NEED TO KEEP THE PATH THAT LEADS TO ROOT WHNE i RENAME IT
+                    tmp_name = \
+                        tmp_name.translate(str.maketrans(
+                            {'/': 'x', '+': 'Q', '=': 'e'}))
+                    # I THINK I NEED TO KEEP THE PATH THAT
+                    # LEADS TO ROOT WHNE i RENAME IT
                     newdname = os.path.dirname(root) + os.sep + tmp_name
-                    debug_msg(6, '  Renaming ' + root + ' to tmp name ' + newdname)
+                    debug_msg(6,
+                              '  Renaming ' + root
+                              + ' to tmp name ' + newdname)
                     os.renames(root, newdname)
                     os.removedirs(newdname)
         else:
-            return(print_err(32700, 'Refusing to kill a temp directory that ' \
+            return(print_err(
+                32700,
+                'Refusing to kill a temp directory that '
                 + 'does not contain tmp or temp in the name: ' + tmp_dir))
 
     return(0)
 
 
 ###############################################################################
-def nm_archiver2(action='c', arch_fname=None, message_included=False,
-    f_list=None, output_dir=None, strip_path=True,
-    ballast_included=False, batch=False,
-    extract_attachments=False,
-    skip_existing=True, clobber='Prompt'):
+def nm_archiver2(
+        action='c',
+        arch_fname=None,
+        message_included=False,
+        f_list=None,
+        output_dir=None,
+        strip_path=True,
+        ballast_included=False,
+        batch=False,
+        extract_attachments=False,
+        skip_existing=True,
+        clobber='Prompt'):
     '''A privacy-respecting archive that can (approximately) replace tar.
 
     nm_archiver2 will read one or more files and put them in
@@ -2827,9 +2902,10 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
     3) The options for clobber are True, False, or 'Prompt'.  The
        values for True and false maybe sent as text or booleans.
 
-    This returns a tuple: (errcode, errmsg_or_bytes, arch_json).  A nonzero
-    errcode indicates an error. If no output directory was specifed for an
-    extract, the message is returned as a BytesIO object in the second parameter.
+    This returns a tuple: (errcode, errmsg_or_bytes, arch_json).
+    A nonzero errcode indicates an error. If no output directory
+    was specifed for an extract, the message is returned as a
+    BytesIO object in the second parameter.
 
     '''
 
@@ -2849,10 +2925,14 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
         elif clobber.lower() in ['n', 'no']:
             clobber = 'f'
         else:
-            return(print_err(3270, 'Unexpected string value for clobber: ' \
+            return(print_err(
+                3270,
+                'Unexpected string value for clobber: '
                 + str(clobber)))
     else:
-        return(print_err(3275, 'Unexpected data type for clobber: ' \
+        return(print_err(
+            3275,
+            'Unexpected data type for clobber: '
             + str(type(clobber))))
 
     # Note: that we do not put any whitespace in the JSON to
@@ -2868,7 +2948,8 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
 
     action = action.lower()
 
-    create_bytesio = False # for creating an archive without writing to disk.
+    # For creating an archive without writing to disk:
+    create_bytesio = False
     f = []
     tot_file_size = 0
     output_block_size = DEFAULT_TARGET_BLOCK_SIZE
@@ -2877,12 +2958,16 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
     # Check for consistency of input args:
     if action == 'c':
         if f_list is None:
-            return((33000, 'Error.  There were no input files to nm_archive.', None))
+            return((
+                33000,
+                'Error.  There were no input files to nm_archive.', None))
 
     elif action == 'x':
         #  Extract an existing archive file:
         if not os.path.isfile(arch_fname):
-            return((33100, 'Error. The input archive filename is missing.', None))
+            return((
+                33100,
+                'Error. The input archive filename is missing.', None))
 
     else:
         return((33300, 'Error.  Invalid action code: ' + str(action), None))
@@ -2926,8 +3011,11 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
         else:
             my_bytes = None
 
-        rc = nm_archiver2_attach_files(f_list, fd_out, item_types=i_types,
-                strip_path=strip_path)
+        rc = nm_archiver2_attach_files(
+            f_list,
+            fd_out,
+            item_types=i_types,
+            strip_path=strip_path)
         if rc != 0:
             return((33381, 'Could not properly archive the file(s).', None))
 
@@ -2956,14 +3044,17 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
 
         # The codecs.open() function supports an option for buffering mode.
         # buffering=1024 means to read 1024 bytes at a time.
-        # I might need to read a reasonable block size to avoid hogging all memory
+        # I might need to read a reasonable block size to
+        # avoid hogging all memory
         # or crashing the server.
         fd_in = open(arch_fname, "rb")
         # read the header
         hdr = fd_in.read(len(NATMSG_ARCH_HEADER))
 
         if hdr.decode('utf-8') != NATMSG_ARCH_HEADER:
-            return((33400, 'bad header on the archive file ' + arch_fname, None))
+            return((
+                33400,
+                'Bad header on the archive file ' + arch_fname, None))
 
         # read the length of the JSON
         try:
@@ -2971,11 +3062,13 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
         except:
             e = str(sys.exc_info()[0:2])
 
-            return((33500, 'Could not read the JSON length in the archive file ' \
+            return((
+                33500,
+                'Could not read the JSON length in the archive file '
                 + arch_fname + ': ' + e, None))
 
         # check the json len
-        if jlen < 10 :
+        if jlen < 10:
             return((33600, 'Error.  Invalid JSON length.', None))
 
         # read the JSON
@@ -2984,11 +3077,14 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
         except:
             e = str(sys.exc_info()[0:2])
 
-            return((33700, 'Bad JSON in the archive file ' + arch_fname + ': ' \
+            return((
+                33700,
+                'Bad JSON in the archive file ' + arch_fname + ': '
                 + e, None))
 
         # The initial attachment count probably includes ballast and
-        # the main msg that need to be deducted below (after they are confirmed).
+        # the main msg that need to be deducted below
+        # (after they are confirmed).
         attachment_count = len(json_array)
         for jjj in json_array:
             # Loop through each 'file entry' in the array.
@@ -2996,9 +3092,10 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
             if 'ballast' in jjj.keys():
                 attachment_count -= 1
 
-            if 'ballast' not in jjj.keys() and ('isMessage' in jjj.keys() \
-                or extract_attachments):
-                # Do not process ballast records, but dot process isMessage records,
+            if 'ballast' not in jjj.keys() \
+                    and ('isMessage' in jjj.keys() or extract_attachments):
+                # Do not process ballast records, but dot process
+                # isMessage records,
                 # and process attachments if the flag says to do so:
                 debug_msg(7, 'Examining a file to see if it can be extracted.')
 
@@ -3011,7 +3108,8 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
 
                     if 'isMessage' in jjj.keys() or extract_attachments:
                         extract_this_file = True
-                        # Do not count the main message as an attachment, and we already
+                        # Do not count the main message as an attachment,
+                        # and we already
                         # initialized counting this record as an attachment,
                         # so undo the calculation.
                         attachment_count -= 1
@@ -3020,7 +3118,9 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
                             extract_this_file = True
 
                 else:
-                    return((33800, 'Could not get filename from JSON. ' + e, None))
+                    return((
+                        33800,
+                        'Could not get filename from JSON. ' + e, None))
 
                 if extract_this_file:
                     if not create_bytesio:
@@ -3030,40 +3130,51 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
                         file_exists = os.path.isfile(fname_out)
                         if file_exists and skip_existing:
                             # Quietly refuse to overwrite an existing file.
-                            debug_msg(3, 'Not overwriting existing file: ' + fname_out)
                             extract_this_file = False
                         elif file_exists and \
-                            os.path.abspath(os.path.expanduser(fname_out)) == \
-                            os.path.abspath(os.path.expanduser(arch_fname)):
+                                os.path.abspath(
+                                    os.path.expanduser(fname_out)) == \
+                                os.path.abspath(
+                                    os.path.expanduser(arch_fname)):
                             # This is intended to avoid overwriting the source
                             # archive file, but the test might not be perfect.
-                            debug_msg(3, 'Not overwriting existing file: ' + fname_out)
+                            debug_msg(
+                                3,
+                                'Not overwriting existing file: ' + fname_out)
                             extract_this_file = False
                         elif file_exists and clobber == 'f':
-                            return((33900, 'Error. File exists, and you said no-clobber (' \
-                                + 'try the skip-existing option to ignore this error).', None))
+                            return((
+                                33900,
+                                'Error. File exists, and you said no-clobber ('
+                                + 'try the skip-existing option to ignore '
+                                + 'this error).', None))
                         elif file_exists and clobber == 'p':
-                            if nm_confirm('Do you want to overwrite this file: ' \
-                                + fname_out + ': ', batch=batch):
-
+                            if nm_confirm(
+                                    'Do you want to overwrite this file: '
+                                    + fname_out + ': ', batch=batch):
                                 extract_this_file = True
                             else:
                                 extract_this_file = False
 
-                        # Some tests above might have turned off 'extract_this_file'.
+                        # Some tests above might have turned
+                        # off 'extract_this_file'.
                         if extract_this_file:
                             out_subdir = os.path.dirname(fname_out)
                             if out_subdir != os.curdir and out_subdir != '':
                                 if not os.path.isdir(out_subdir):
-                                    # the output subdirectory does not exist,
+                                    # The output subdirectory does not exist,
                                     # so create it.
-                                    debug_msg(4, 'I will create output directory: ' + out_subdir)
-                                    os.makedirs(out_subdir, mode=0o700, exist_ok=True)
+                                    os.makedirs(
+                                        out_subdir,
+                                        mode=0o700,
+                                        exist_ok=True)
                             try:
                                 fd_out = open(fname_out, 'wb')
                             except:
-                                return((34000, 'Error. Failed to open output filename ' +
-                                    fname_out, None))
+                                return((
+                                    34000,
+                                    'Error. Failed to open output filename '
+                                    + fname_out, None))
                     else:
                         # bytesio output to RAM
                         fd_out = io.BytesIO()
@@ -3077,8 +3188,10 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
                             fd_out.write(fd_in.read(flen))
                         except:
                             e = repr(sys.exc_info()[0:2])
-                            return((34100, 'Failed to write to output filename ' +
-                                fname_out + '. ' + e, None))
+                            return((
+                                34100,
+                                'Failed to write to output filename '
+                                + fname_out + '. ' + e, None))
 
                         if create_bytesio:
                             my_bytes = fd_out.getvalue()
@@ -3094,20 +3207,29 @@ def nm_archiver2(action='c', arch_fname=None, message_included=False,
                 else:
                     # the JSON did not define an output filename:
                     debug_msg(4, 'No filename in the JSON.')
-                    return((34200, 'the JSON did not supply an filename for ' \
-                             + 'archived file.', None))
+                    return((
+                        34200,
+                        'the JSON did not supply an filename for '
+                        + 'archived file.', None))
 
         fd_in.close()
 
     if create_bytesio:
         # This part typically runs when I extract just the message part,
         # not the attachments, and I do not provide an output_dir:
-        return((0, '', {'attachment_count': attachment_count,
-            'msg_txt':my_bytes.decode('utf-8'), 'extracted_files': extracted_files}))
+        return((
+            0,
+            '',
+            {'attachment_count': attachment_count,
+             'msg_txt': my_bytes.decode('utf-8'),
+             'extracted_files': extracted_files}))
 
     else:
-        return((0, '', {'attachment_count': attachment_count,
-            'extracted_files': extracted_files}))
+        return((
+            0,
+            '',
+            {'attachment_count': attachment_count,
+             'extracted_files': extracted_files}))
 
 
 ###############################################################################
@@ -3134,7 +3256,6 @@ def nm_archiver_json(fname_list, item_types, version=2):
     """
     jarray = ['[']
 
-
     for j in range(len(fname_list)):
         # fname_input is the input file name, possibly with path.
         # fname_clean is just the simple file name without the extension
@@ -3144,9 +3265,9 @@ def nm_archiver_json(fname_list, item_types, version=2):
         fsize = 0
 
         if item_types[j] not in ['message', 'attachment', 'ballast', '']:
-            return(print_err(34300, 'Bad item type sent to nm_archiver_json: ' \
-                + item_types[j] \
-                + ' for file: ' + fname_clean))
+            return(print_err(34300, 'Bad item type sent to nm_archiver_json: '
+                             + item_types[j]
+                             + ' for file: ' + fname_clean))
 
         if j > 0:
             # Add a comma between elements in the JSON array
@@ -3157,26 +3278,31 @@ def nm_archiver_json(fname_list, item_types, version=2):
             fname_ext = fname_ext[1:]
 
         if not os.path.isfile(fname_list[j]):
-            return((print_err(34450, 'The requested file to archive is not a file: ' \
+            return((print_err(
+                34450,
+                'The requested file to archive is not a file: '
                 + fname_list[j]), None, None))
 
         fsize += os.stat(fname_list[j]).st_size
 
         # To match Chris's version, I will convert item_type to a flag only
         # for item_type='message'
-        if item_types[j]=='message':
+        if item_types[j] == 'message':
             # Chris uses lower case 'true' in Mac OS X. JSON understands
             # only lower case 'true' as a boolean (with no quotes around it).
-            jflags=',"isMessage":true'
+            jflags = ',"isMessage":true'
         else:
-            jflags=''
+            jflags = ''
 
-        ### To Do: Chris needs to add base64 to filenames to prevent JSON errors
-        ## json_str = '{"fileName":"' \
-        ##     + base64.b64encode(bytes(fname_clean, 'utf-8')).decode('utf8') + '",' \
-        ##     + '"fileExt":"' \
-        ##     + base64.b64encode(bytes(fname_ext , 'utf-8')).decode('utf8') + '",' \
-        ##     + '"size":' + str(fsize) + jflags + '}'
+        # ## To Do: Chris needs to add base64 to filenames to
+        # ## prevent JSON errors
+        # # json_str = '{"fileName":"' \
+        # #     + base64.b64encode(
+        # #         bytes(fname_clean, 'utf-8')).decode('utf8') + '",'
+        # #     + '"fileExt":"'
+        # #     + base64.b64encode(
+        # #         bytes(fname_ext, 'utf-8')).decode('utf8') + '",'
+        # #     + '"size":' + str(fsize) + jflags + '}'
         json_str = '{"fileName":"' \
             + fname_clean + '",' \
             + '"fileExt":"' \
@@ -3200,7 +3326,7 @@ def nm_archiver_json(fname_list, item_types, version=2):
 
     jarray.append(',{"ballast":"' + ballast_data + '"}]')
 
-    return((0, ''.join(jarray) , fsize))
+    return((0, ''.join(jarray), fsize))
 
 
 ###############################################################################
@@ -3210,9 +3336,10 @@ def nm_archiver2_attach_files(
         item_types):
     """Attach files to an NM archive file.
 
-    Attach one or more files, named in fname_list, to the archive file handle described
-    by fd_out.  You must have fd_out open for binary writing before
-    calling this. The caller should close fd_out when done.
+    Attach one or more files, named in fname_list, to the archive
+    file handle described by fd_out.  You must have fd_out
+    open for binary writing before calling this. The caller
+    should close fd_out when done.
 
     item_types is an array that has the value 'message' (for the body of
     the email or the manifest for a regular archive) or 'attachment'
@@ -3232,29 +3359,37 @@ def nm_archiver2_attach_files(
     0 on success, else nonzero.
     """
     if len(fname_list) != len(item_types):
-        return(print_err(34500, 'The length if fname_list is not equal to ' \
+        return(print_err(
+            34500,
+            'The length if fname_list is not equal to '
             + 'the length of item_types in nm_archiver2_attach_file'))
 
     # verify item types
     for j in range(len(fname_list)):
         if item_types[j] not in ['message', 'attachment', 'ballast', '']:
-            return(print_err(34600, 'Bad item type sent to nm_archiver2_attach_file: ' \
-                + item_types[j] \
+            return(print_err(
+                34600,
+                'Bad item type sent to nm_archiver2_attach_file: '
+                + item_types[j]
                 + ' for file: ' + fname_list[j]))
 
     # Get the JSON that describes all the attachments.
     err_nbr, json_str, tot_file_size = nm_archiver_json(fname_list, item_types)
     if err_nbr != 0:
-        return(print_err(34700, 'In nm_archiver2_attach_file, could not get ' \
+        return(print_err(
+            34700,
+            'In nm_archiver2_attach_file, could not get '
             + 'basic info about file: ' + str(fname_list)))
 
     json_bytes = bytes(json_str, 'utf-8')
 
     # The length of the JSON is expessed as 6 ASCII integer characters
     # with leading zeroes.
-    ###fd_out.write(struct.pack('<L', len(json_bytes)))
+    # #fd_out.write(struct.pack('<L', len(json_bytes)))
     if len(json_bytes) > 999999:
-        return(print_err(34700, 'In nm_archiver2_attach_file, the JSON is too long.'))
+        return(print_err(
+            34700,
+            'In nm_archiver2_attach_file, the JSON is too long.'))
 
     fd_out.write(bytes("%06d" % len(json_bytes), 'utf-8'))
     # Now write the actual JSON
@@ -3265,7 +3400,9 @@ def nm_archiver2_attach_files(
         try:
             fd_in = open(fname_list[j], "rb")
         except:
-            return(print_err(34800, 'Could not open the input message file: ' \
+            return(print_err(
+                34800,
+                'Could not open the input message file: '
                 + fname_list[j]))
 
         try:
@@ -3273,7 +3410,9 @@ def nm_archiver2_attach_files(
             fd_out.write(fd_in.read())
         except:
             # I lumped several actions into one error trap--review this later.
-            return(print_err(34900, "Error. Could not open the output files for writing"))
+            return(print_err(
+                34900,
+                'Error. Could not open the output files for writing'))
 
         fd_in.close()
 
@@ -3293,7 +3432,6 @@ def nm_fetch_server_farm():
     """
     global MAIN_CONFIG
 
-
     MAIL_DIR = None
     sfarm_fname = None
     try:
@@ -3308,7 +3446,7 @@ def nm_fetch_server_farm():
             + 'to run natmsgclib.start().  ' + e)
         pass
 
-    ## TEMPORARILY HARD-CODED
+    #  TEMPORARILY HARD-CODED
     url = 'https://naturalmessage.com/json/serverFarm.json'
     r = None
     requests.packages.urllib3.disable_warnings()
@@ -3349,7 +3487,7 @@ def nm_fetch_server_farm():
         else:
             debug_msg(
                 3,
-                'There was no sfarm_fname available, so there will ' \
+                'There was no sfarm_fname available, so there will '
                 + 'be no disk copy of the current server farm list.')
 
         return((0, server_dict))
@@ -3408,7 +3546,7 @@ def nm_confirm(prompt='Do you want continue? (y/n): ', batch=False):
         elif answ.lower() == 'n' or answ.lower() == 'no':
             return(False)
         else:
-            answ = None # force another loop
+            answ = None  # Force another loop.
 
         if answ is not None:
             print('Enter y or n.')
@@ -3444,27 +3582,29 @@ def input_and_confirm(prompt, int_answer=False, default_value=None):
 
     good = False
     while not good:
-        ###    answ = input(prompt)
-        ###
-        ###    if answ == '':
-        ###        conf = input('Do you want quit? (y/n): ')
-        ###        if conf.lower() == 'y' or conf.lower() == 'yes':
-        ###            return(None)
-        ###        else:
-        ###            answ = None # force another loop
-        ###
-        ###    if int_answer and answ is not None:
-        ###        int_val = None
-        ###        try:
-        ###            int_val = int(answ)
-        ###        except:
-        ###            # Wrong input format, try again
-        ###            print('Enter a numeric value.  Try again.')
-        ###            answ = None # force another loop
-        ###
-        ###        if int_val is not None:
-        ###            answ = int_val
-        answ = input_no_confirm(prompt, int_answer=int_answer,
+        # #    answ = input(prompt)
+        # #
+        # #    if answ == '':
+        # #        conf = input('Do you want quit? (y/n): ')
+        # #        if conf.lower() == 'y' or conf.lower() == 'yes':
+        # #            return(None)
+        # #        else:
+        # #            answ = None # force another loop
+        # #
+        # #    if int_answer and answ is not None:
+        # #        int_val = None
+        # #        try:
+        # #            int_val = int(answ)
+        # #        except:
+        # #            # Wrong input format, try again
+        # #            print('Enter a numeric value.  Try again.')
+        # #            answ = None # force another loop
+        # #
+        # #        if int_val is not None:
+        # #            answ = int_val
+        answ = input_no_confirm(
+            prompt,
+            int_answer=int_answer,
             default_value=default_value)
 
         if answ is not None:
@@ -3472,7 +3612,7 @@ def input_and_confirm(prompt, int_answer=False, default_value=None):
 
             conf = input('Do you want to keep this answer? (y/n): ')
             if conf.lower() == 'y' or conf.lower() == 'yes':
-                good =True
+                good = True
 
     return(answ)
 
@@ -3514,8 +3654,9 @@ def input_no_confirm(prompt, int_answer=False, default_value=None):
                 # quit
                 return(None)
             else:
-                conf = input('Do you want to specify that your answer is ' \
-                    + 'the text (in angle brackets): <' + answ + '>? (y/n): ')
+                conf = input('Do you want to specify that your answer is '
+                             + 'the text (in angle brackets): <'
+                             + answ + '>? (y/n): ')
                 if conf.lower() == 'y' or conf.lower() == 'yes':
                     return(answ)
                 else:
@@ -3535,13 +3676,13 @@ def input_no_confirm(prompt, int_answer=False, default_value=None):
                 except:
                     # Wrong input format, try again
                     print('Enter a numeric value.  Try again.')
-                    answ = None # force another loop
+                    answ = None  # Force another loop.
 
                 if int_val is not None:
                     answ = int_val
                     good = True
             else:
-                good = True # string entry
+                good = True  # String entry
 
     return(answ)
 
@@ -3662,7 +3803,8 @@ def nm_menu_choice(lst, prompt=': ', title='', trim_width=True):
         item_idx = 0
         for x in tmp:
             if item_idx == 0:
-                menu_txt_clean.append(str(menu_entry_idx + 1) + ') ' \
+                menu_txt_clean.append(
+                    str(menu_entry_idx + 1) + ') '
                     + x[0:display_width])
             else:
                 menu_txt_clean.append(x[0:display_width])
@@ -3671,7 +3813,7 @@ def nm_menu_choice(lst, prompt=': ', title='', trim_width=True):
 
         menu_entry_idx += 1
 
-    #----------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # Display height is determined by global settings as
     # intepreted by nm_display_menu_selection.
     nm_display_menu_section(
@@ -3741,7 +3883,7 @@ def nm_menu_choice(lst, prompt=': ', title='', trim_width=True):
             if int_choice is not None:
                 if int_choice > len(lst) or int_choice < 1:
                     print('Enter an integer FROM THE LIST '
-                        + '(or Q to quit): ', end='')
+                          + '(or Q to quit): ', end='')
                 else:
                     good = True
 
@@ -3814,18 +3956,20 @@ def nm_input_list_and_confirm(
             prompts_with_answers[j] = prompts[j][0] + ': ' + str(answers[j])
 
         good = False
-        while good == False:
+        while good is False:
             choice, val = nm_menu_choice(
                 prompts_with_answers,
                 prompt='Enter a number to modify an entry, '
-                +'or press Q to finish: ',
+                + 'or press Q to finish: ',
                 trim_width=trim_width)
 
             if choice < 0:
                 good = True
             else:
-                answers[choice] = input_no_confirm(prompts[choice][0] \
-                    + ': ', prompts[choice][1])
+                answers[choice] = input_no_confirm(
+                    prompts[choice][0]
+                    + ': ',
+                    prompts[choice][1])
                 prompts_with_answers[choice] = prompts[choice][0] \
                     + ': ' + str(answers[choice])
 
@@ -3983,7 +4127,7 @@ def nm_set_pgm_opt(opt_key, pgm_list, prompt1, prompt2):
     pgm_encrypted = None
     options_changed = False
 
-    if not opt_key in MAIN_CONFIG['SETTINGS'].keys():
+    if opt_key not in MAIN_CONFIG['SETTINGS'].keys():
         options_changed = True
         MAIN_CONFIG['SETTINGS'][opt_key] = ''
 
@@ -3991,7 +4135,7 @@ def nm_set_pgm_opt(opt_key, pgm_list, prompt1, prompt2):
 
     debug_msg(
         6,
-        'The existing, encrypted pgm path is: ' \
+        'The existing, encrypted pgm path is: '
         + str(pgm_encrypted) + ' for key ' + opt_key)
 
     if pgm_encrypted != '':
@@ -4037,7 +4181,8 @@ def nm_set_pgm_opt(opt_key, pgm_list, prompt1, prompt2):
                     pass
 
                 if the_pgm is not None:
-                    MAIN_CONFIG['SETTINGS'][opt_key] = the_pgm #encrypted
+                    # The setting for pgm is encrypted.
+                    MAIN_CONFIG['SETTINGS'][opt_key] = the_pgm
                     break
 
         if MAIN_CONFIG['SETTINGS'][opt_key] == '':
@@ -4065,7 +4210,8 @@ def nm_set_pgm_opt(opt_key, pgm_list, prompt1, prompt2):
                         pass
 
                     if the_pgm is not None:
-                        MAIN_CONFIG['SETTINGS'][opt_key] = the_pgm #encrypted
+                        # The setting for pgm is encrypted.
+                        MAIN_CONFIG['SETTINGS'][opt_key] = the_pgm
                 else:
                     print('That is not a file: ' + path + '.  Try again.')
 
@@ -4076,35 +4222,40 @@ def nm_set_pgm_opt(opt_key, pgm_list, prompt1, prompt2):
             print('There was an error writing the changes to disk.')
             input('Press any key to continue...')
 
-
     return(0)
+
 
 ###############################################################################
 def nm_set_rtf_reader_pgm():
     """Prompt user to select an RTF viewer.  Save the setting."""
-    rc = nm_set_pgm_opt('rtf_reader_pgm',
-                pgm_list=['libreoffice', 'openoffice', 'abiword', 'catdoc'],
-                prompt1='The RTF viewer program is not installed or is '
-                    + 'not in the expected location.  It is not essential '
-                    + 'to have an RTF viewer if you have the unrtf '
-                    + 'program (or textutil on Mac) '
-                    + 'installed. ' + os.linesep
-                    + 'On UNIX-like systems, you can search for the '
-                    + 'exact path of a program by running something like:'
-                    + os.linesep + '  whereis libreoffice' + os.linesep
-                    + 'then take the first path in the result listing.',
-                prompt2='Do you want to manually enter a path to point '
-                    + 'to the RTF viewer program (such as MS Word, '
-                    + 'OpenOffice...)? (y/n): ')
+    rc = nm_set_pgm_opt(
+        'rtf_reader_pgm',
+        pgm_list=['libreoffice', 'openoffice', 'abiword', 'catdoc'],
+        prompt1='The RTF viewer program is not installed or is '
+                + 'not in the expected location.  It is not essential '
+                + 'to have an RTF viewer if you have the unrtf '
+                + 'program (or textutil on Mac) '
+                + 'installed. ' + os.linesep
+                + 'On UNIX-like systems, you can search for the '
+                + 'exact path of a program by running something like:'
+                + os.linesep + '  whereis libreoffice' + os.linesep
+                + 'then take the first path in the result listing.',
+        prompt2='Do you want to manually enter a path to point '
+                + 'to the RTF viewer program (such as MS Word, '
+                + 'OpenOffice...)? (y/n): ')
     return(rc)
+
 
 def nm_set_unrtf_pgm():
     rc = nm_set_pgm_opt(
-                'unrtf_pgm', ['unrtf'], prompt1='The unrtf program is '
-                + 'not installed or is not in the expected location.',
-                prompt2='Do you want to manually enter ' \
-                + 'a path to point to the unrtf program? (y/n): ')
+        'unrtf_pgm',
+        ['unrtf'],
+        prompt1='The unrtf program is '
+        + 'not installed or is not in the expected location.',
+        prompt2='Do you want to manually enter '
+        + 'a path to point to the unrtf program? (y/n): ')
     return(rc)
+
 
 ###############################################################################
 def nm_find_default_config_fname():
@@ -4172,7 +4323,9 @@ def nm_find_default_config_fname():
                 debug_msg(2, 'saving config file to: ' + config_fname)
             except:
                 e = repr(sys.exc_info()[0:2])
-                print_err(36300, 'Can not create the config file at '
+                print_err(
+                    36300,
+                    'Can not create the config file at '
                     + other_config_fname + ': ' + e)
             else:
                 fd.close
@@ -4190,7 +4343,9 @@ def nm_find_default_config_fname():
                     debug_msg(2, 'Saving config file to: ' + config_fname)
                 except:
                     e = repr(sys.exc_info()[0:2])
-                    print_err(36400, 'Can not create the config file at '
+                    print_err(
+                        36400,
+                        'Can not create the config file at '
                         + 'either location, including  '
                         + other_config_fname + ': ' + e)
                 else:
@@ -4259,9 +4414,9 @@ def nm_create_config_file(homedir):
     RECEIPT_FILE = MAIL_DIR + os.sep + 'settings' + os.sep \
         + 'pbkdf2_receipt.save'
 
-    ######################################################################
-    ##### move the creation of directories to a new directory that can
-    ##### be called from receipt-save func.
+    # ####################################################################
+    # ### move the creation of directories to a new directory that can
+    # ### be called from receipt-save func.
     # Create the mail directory if it does not exist
     if not os.path.isdir(MAIL_DIR):
         try:
@@ -4270,8 +4425,7 @@ def nm_create_config_file(homedir):
 
                 debug_msg(
                     2,
-                    '==== fixing owner for ' \
-                    + MAIL_DIR)
+                    '==== fixing owner for ' + MAIL_DIR)
                 shutil.chown(
                     MAIL_DIR,
                     user=pwd.getpwnam(os.getlogin()).pw_uid,
@@ -4279,16 +4433,21 @@ def nm_create_config_file(homedir):
 
         except:
             e = str(sys.exc_info()[0:2])
-            return((print_err(36700, 'Can not create the mail directory: ' \
-                + MAIL_DIR +'.  ' + e), None))
+            return((
+                print_err(
+                    36700,
+                    'Can not create the mail directory: '
+                    + MAIL_DIR + '.  ' + e),
+                None))
 
     os.makedirs(MAIL_DIR + os.sep + 'settings', mode=0o700, exist_ok=True)
     if platform.system().lower() != 'windows':
-        shutil.chown(MAIL_DIR + os.sep + 'settings',
+        shutil.chown(
+            MAIL_DIR + os.sep + 'settings',
             user=pwd.getpwnam(os.getlogin()).pw_uid,
             group=pwd.getpwnam(os.getlogin()).pw_gid)
 
-    ######################################################################
+    # ####################################################################
     #
     if SESSION_PW == '':
         # The pw_hash2() function normally looks for the name of the
@@ -4318,7 +4477,8 @@ def nm_create_config_file(homedir):
     # Some default settings:
     # Note, and option for an executable program needs to be encrypted
     # (e.g., text editor, unrtf, and rtf viewer)
-    MAIN_CONFIG['SETTINGS'] = {'update_interval': '5',
+    MAIN_CONFIG['SETTINGS'] = {
+        'update_interval': '5',
         'mail_dir': MAIL_DIR,
         'download_directory': os.path.expanduser('~/Downloads'),
         'verbosity': 2,
@@ -4333,7 +4493,7 @@ def nm_create_config_file(homedir):
         'allow_clear_screen': True,
         'archive_version': '1'}
 
-    ########################################################################
+    # ######################################################################
     print('Creating the default identity and box ID.  Please wait...')
 
     # To Do: allow the user to select the server from either the serverFarm
@@ -4358,9 +4518,9 @@ def nm_create_config_file(homedir):
     # encrypting the values.
     config_txt = nm_encrypt_local_txt(prv_id, SESSION_PW)  # returns type str()
     MAIN_CONFIG['Identity1'] = {}
-    MAIN_CONFIG['Identity1']['prvid'] = config_txt # 'PRV....'
+    MAIN_CONFIG['Identity1']['prvid'] = config_txt
 
-    ## self-test... decrypt and see if it matches:
+    # Self-test... decrypt and see if it matches:
     config_txt = nm_decrypt_local_txt(
         MAIN_CONFIG['Identity1']['prvid'],
         SESSION_PW)
@@ -4378,17 +4538,17 @@ def nm_create_config_file(homedir):
     config_txt = nm_encrypt_local_txt(pub_id, SESSION_PW)
     MAIN_CONFIG['Identity1']['pubid1'] = config_txt
 
-    # for the first box ID only, make it the default box ID (encrypted)
-    MAIN_CONFIG['SETTINGS']['current_pub_box_id'] = config_txt # 'PRV....'
-
+    # For the first box ID only, make it the default box ID (encrypted)
+    MAIN_CONFIG['SETTINGS']['current_pub_box_id'] = config_txt
 
     config_txt = nm_encrypt_local_txt('main', SESSION_PW)
     MAIN_CONFIG['Identity1']['nickname1'] = config_txt
 
     debug_msg(1, 'OK, box ID created.')
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if nm_confirm(prompt='Do you want to add another box ID under the ' \
-        + 'default identity? (y/n): '):
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    if nm_confirm(
+        prompt='Do you want to add another box ID under the '
+               + 'default identity? (y/n): '):
         err_nbr, prv_id2, pub_id2 = nm_account_create(private_box_id=prv_id)
         if err_nbr != 0:
             print_err(
@@ -4425,7 +4585,7 @@ def nm_create_config_file(homedir):
         SESSION_PW)
     MAIN_CONFIG['Identity1']['contact_note1'] = config_txt
 
-    ########################################################################
+    # ######################################################################
     #                   Top Secret Identity
     print('Creating the Top Secret identity and box ID.  Please wait...')
     prv_id = None
@@ -4442,11 +4602,11 @@ def nm_create_config_file(homedir):
     MAIN_CONFIG['Identity2'] = {}
 
     config_txt = nm_encrypt_local_txt('Top Secret', SESSION_PW)
-    MAIN_CONFIG['Identity2']['identity_nickname2'] = config_txt # 'PRV....'
+    MAIN_CONFIG['Identity2']['identity_nickname2'] = config_txt
 
     config_txt = nm_encrypt_local_txt(prv_id, SESSION_PW)
     MAIN_CONFIG['Identity2'] = {}
-    MAIN_CONFIG['Identity2']['prvid'] = config_txt # 'PRV....'
+    MAIN_CONFIG['Identity2']['prvid'] = config_txt
 
     config_txt = nm_encrypt_local_txt(pub_id, SESSION_PW)
     MAIN_CONFIG['Identity2']['pubid1'] = config_txt
@@ -4455,23 +4615,26 @@ def nm_create_config_file(homedir):
     MAIN_CONFIG['Identity2']['nickname1'] = config_txt
 
     print('OK, box ID created.')
-    if nm_confirm(prompt='Do you want to add another box ID under the ' \
-        + 'Top Secret identity? (y/n): '):
+    if nm_confirm(
+        prompt='Do you want to add another box ID under the '
+               + 'Top Secret identity? (y/n): '):
         prv_id2 = None
         pub_id2 = None
         err_nbr = None
         err_nbr, prv_id2, pub_id2 = nm_account_create(private_box_id=prv_id)
         if err_nbr != 0:
-            print_err(err_nbr, 'Failed to create the second box ID under ' \
-                + 'the Top Secret identity. ' \
-                + 'Try again in 10 minutes.')
+            print_err(
+                err_nbr,
+                'Failed to create the second box ID under '
+                + 'the Top Secret identity. Try again in 10 minutes.')
         else:
 
             config_txt = nm_encrypt_local_txt(pub_id2, SESSION_PW)
             MAIN_CONFIG['Identity2']['pubid2'] = config_txt
 
-            nickname = input_and_confirm('Enter a nickname for the '
-                + 'second box ID under Top Secret ' \
+            nickname = input_and_confirm(
+                'Enter a nickname for the '
+                + 'second box ID under Top Secret '
                 + ' (this is never sent to any server): ')
             if nickname is not None:
                 config_txt = nm_encrypt_local_txt(nickname, SESSION_PW)
@@ -4479,13 +4642,15 @@ def nm_create_config_file(homedir):
             else:
                 print('nickname not saved')
 
-    #----------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     # set the default editor
     nm_select_editor()
-    #----------------------------------------------------------------------
+    # ---------------------------------------------------------------------
     err_nbr = nm_write_config()
     if err_nbr != 0:
-        return((print_err(37100, 'Could not save the configuration file.  '
+        return((print_err(
+            37100,
+            'Could not save the configuration file.  '
             + 'This is a serious error.  '
             + 'Check permissions to the home directory, and check '
             + 'free disk space.'), None))
@@ -4494,15 +4659,15 @@ def nm_create_config_file(homedir):
     print('==================================================================')
     print('WARNING: It is SUPER IMPORTANT that you make a backup copy of ')
     print('your configuration file: ')
-    print('    ' +  CONFIG_FNAME)
+    print('    ' + CONFIG_FNAME)
     print('That file contains encrypted information that is needed to '
-        + 'access your inbox.')
+          + 'access your inbox.')
     print('If your hard drive or computer fails and you do not have a backup ')
     print('copy, then you will not be able to access your inbox.')
     print('You could create a new box ID, but you will not be able to access ')
     print('the old one.')
     print('WARNING: If you forget your password, you will not be able '
-        + 'to access your inbox.')
+          + 'to access your inbox.')
     print('==================================================================')
     input('Press any key to continue....')
 
@@ -4532,9 +4697,9 @@ def nm_create_config_file(homedir):
         if root_owner_found:
             if os.getlogin() == 'root':
                 print('WARNING, your mail directory contains files that are '
-                    + 'owned by the root user ID and might not be '
-                    + 'accessible to your regular user ID.  '
-                    + 'Your login ID is also set to root. ')
+                      + 'owned by the root user ID and might not be '
+                      + 'accessible to your regular user ID.  '
+                      + 'Your login ID is also set to root. ')
 
                 owner_id_alpha = intput(
                     'Enter the user ID that you '
@@ -4597,7 +4762,7 @@ def nm_write_config():
             roll_gdg(CONFIG_FNAME)
         except:
             print('Warning.  Could not save an archive copy of '
-                + 'the configuration file.')
+                  + 'the configuration file.')
 
         try:
             fd = codecs.open(CONFIG_FNAME, 'w', 'utf-8')
@@ -4712,8 +4877,9 @@ def nm_build_contact_dict(
     include_anonymous -- defaults to False.  If it is set to True, this will
         include a contact of 'Anonymous,' which allows the user to send
         a message from 'Anonymous' (meaning no sender ID).
-    local_only -- defaults to False. If set to True, include only those contacts
-        that represent the current user (for use as the From/Reply-to user ID).
+    local_only -- defaults to False. If set to True, include only those
+        contacts that represent the current user (for use as the
+        From/Reply-to user ID).
 
     Return value:
     0 for success, or nonzero for failure.
@@ -4723,10 +4889,12 @@ def nm_build_contact_dict(
     global MAIN_CONFIG
 
     if current_identity not in MAIN_CONFIG.keys():
-        ## silently return because this will be called for senders
-        ## or are not in the contact list, and I will just present
-        ## the formatted box ID rather than including a nickname
-        print_err(38170, 'The identity passed to nm_build_contact_list was ' \
+        # Silently return because this will be called for senders
+        # or are not in the contact list, and I will just present
+        # the formatted box ID rather than including a nickname.
+        print_err(
+            38170,
+            'The identity passed to nm_build_contact_list was '
             + 'not found: ' + str(current_identity))
         return(None)
 
@@ -4743,8 +4911,9 @@ def nm_build_contact_dict(
                 try:
                     nickname = ' ' \
                         + nm_decrypt_local_txt(
-                            MAIN_CONFIG[current_identity]['contact_nickname'
-                            + str(id_nbr)], SESSION_PW)
+                            MAIN_CONFIG[current_identity][
+                                'contact_nickname' + str(id_nbr)],
+                            SESSION_PW)
 
                 except:
                     pass
@@ -4753,20 +4922,22 @@ def nm_build_contact_dict(
                 try:
                     contact_note = ' ' \
                         + nm_decrypt_local_txt(
-                            MAIN_CONFIG[current_identity]['contact_note'
-                            + str(id_nbr)], SESSION_PW)
+                            MAIN_CONFIG[current_identity][
+                                'contact_note' + str(id_nbr)],
+                            SESSION_PW)
 
                 except:
                     contact_note = ''
                     pass
 
                 # decrypt the box ID
-                box_id = nm_decrypt_local_txt(MAIN_CONFIG[current_identity][a],
+                box_id = nm_decrypt_local_txt(
+                    MAIN_CONFIG[current_identity][a],
                     SESSION_PW)
 
                 if nickname is None:
                     # try to build unique keys using the last few chars
-                    nickname = ' (no nickname-' + box_id[-6: ] + ')'
+                    nickname = ' (no nickname-' + box_id[-6:] + ')'
 
                 contact_description = nickname + ', ' \
                     + box_id[0:16] + '...' + box_id[-6:]
@@ -4774,9 +4945,9 @@ def nm_build_contact_dict(
                 contact_dict.update(
                     {contact_description: {
                         'id_nbr': id_nbr,
-                        'box_id':box_id,
-                        'nickname':nickname,
-                        'contact_note':contact_note}})
+                        'box_id': box_id,
+                        'nickname': nickname,
+                        'contact_note': contact_note}})
 
     # Add the user's own box ID to the contact list:
     for a in MAIN_CONFIG[current_identity].keys():
@@ -4788,8 +4959,8 @@ def nm_build_contact_dict(
             try:
                 # The * in the first column indicates a local account
                 nickname = '*' + nm_decrypt_local_txt(
-                    MAIN_CONFIG[current_identity]['nickname'
-                    + str(id_nbr)], SESSION_PW)
+                    MAIN_CONFIG[current_identity]['nickname' + str(id_nbr)],
+                    SESSION_PW)
 
             except:
                 pass
@@ -4797,15 +4968,16 @@ def nm_build_contact_dict(
             if nickname is None:
                 nickname = '*(no nickname)'
 
-            # decrypt the box ID
-            box_id = nm_decrypt_local_txt(MAIN_CONFIG[current_identity][a],
+            #  Decrypt the box ID.
+            box_id = nm_decrypt_local_txt(
+                MAIN_CONFIG[current_identity][a],
                 SESSION_PW)
 
             contact_description = nickname + ', ' \
                 + box_id[0:16] + '...' + box_id[-6:]
-            # contact description and the full box ID:
+            # Contact description and the full box ID:
             contact_dict.update(
-                {contact_description: {'id_nbr': id_nbr, 'box_id':box_id}})
+                {contact_description: {'id_nbr': id_nbr, 'box_id': box_id}})
 
     if include_anonymous:
         contact_dict.update(
@@ -4825,10 +4997,10 @@ def nm_start(batch=False):
     global CONFIG_FNAME
     global VERBOSITY
 
-    MAIL_DIR = '' # loaded from options or calculated
+    MAIL_DIR = ''  # Loaded from options or calculated.
     HOME_DIR = os.path.expanduser('~')
 
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     need_new_config_file = False
     need_new_config_file, tmp_config_fname = nm_find_default_config_fname()
 
@@ -4848,9 +5020,9 @@ def nm_start(batch=False):
         # # so that I can prepare the nm_mail directory tree...
         # # a new config file will be built later.
 
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if need_new_config_file:
         err_nbr, CONFIG_FNAME = nm_create_config_file(homedir=HOME_DIR)
         if err_nbr != 0:
@@ -4874,23 +5046,25 @@ def nm_start(batch=False):
             + 'is no value for config_fname.  This is a programmer error.'))
 
     if CONFIG_FNAME == '':
-        return(print_err(38400, 'After the configuration file was supposed ' \
-            + 'to be verified, ' \
+        return(print_err(
+            38400,
+            'After the configuration file was supposed to be verified, '
             + 'config_fname is blank.  This is a programmer error.'))
 
     debug_msg(1, 'Loading configuration file: ' + CONFIG_FNAME)
 
-    #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # We have an existing configuration file, read it.
     MAIN_CONFIG = configparser.ConfigParser()
     MAIN_CONFIG.read(CONFIG_FNAME)
 
-    ##-#-#-#-#-#- Some verification needed for the startup process:
+    # -#-#-#-#-#- Some verification needed for the startup process:
     if 'screen_width' not in MAIN_CONFIG['SETTINGS'].keys():
         print(
             'WARNING. Your options file does not contain an entry for '
             + 'screen_width. Defaulting to 80')
-        MAIN_CONFIG['SETTINGS']['screen_width'] = '80' # all values are strings
+        # Screen width is a string -- all config opts are strings.
+        MAIN_CONFIG['SETTINGS']['screen_width'] = '80'
         time.sleep(.3)
 
     if 'screen_height' not in MAIN_CONFIG['SETTINGS'].keys():
@@ -4899,25 +5073,20 @@ def nm_start(batch=False):
             + 'screen_height. Defaulting to 20')
         MAIN_CONFIG['SETTINGS']['screen_height'] = '20'
         time.sleep(.3)
-    ##-#-#-#-#-#-
-
 
     if 'mail_dir' not in MAIN_CONFIG['SETTINGS'].keys():
-        print(
-            'Error.  Your settings file is corrupt. There is no value for '
-            + 'mail_dir.')
-        print(
-            'Either restore ' + CONFIG_FNAME
-            + ' or rename it to force this '
-            + 'program to create a new file.  If you let this '
-            + 'program generate a new settings file, '
-            + 'will create a new box ID for you (you must recover your old '
-            + 'settings file if you want to receive messages to '
-            + 'your old box_id).')
-        print(
-            'If you create a new settings file, use the same '
-            + 'password so that you can copy your old contacts into '
-            + 'the new file when you restore your real config file.')
+        print('Error.  Your settings file is corrupt. There is no value for '
+              + 'mail_dir.')
+        print('Either restore ' + CONFIG_FNAME
+              + ' or rename it to force this '
+              + 'program to create a new file.  If you let this '
+              + 'program generate a new settings file, '
+              + 'will create a new box ID for you (you must recover your old '
+              + 'settings file if you want to receive messages to '
+              + 'your old box_id).')
+        print('If you create a new settings file, use the same '
+              + 'password so that you can copy your old contacts into '
+              + 'the new file when you restore your real config file.')
         sys.exit(333)
     else:
         MAIL_DIR = MAIN_CONFIG['SETTINGS']['mail_dir']
@@ -4932,7 +5101,8 @@ def nm_start(batch=False):
             # Do not alter the privileges.
             os.makedirs(os.path.expanduser(os.path.join('~', 'Downloads')))
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    dirs = [MAIL_DIR,
+    dirs = [
+        MAIL_DIR,
         MAIL_DIR + os.sep + 'settings',
         MAIL_DIR + os.sep + 'Identity1' + os.sep + 'received',
         MAIL_DIR + os.sep + 'Identity1' + os.sep + 'incoming',
@@ -4941,12 +5111,14 @@ def nm_start(batch=False):
         MAIL_DIR + os.sep + 'Identity2' + os.sep + 'received',
         MAIL_DIR + os.sep + 'Identity2' + os.sep + 'incoming',
         MAIL_DIR + os.sep + 'Identity2' + os.sep + 'sent',
-        MAIL_DIR + os.sep + 'Identity2' + os.sep + 'outgoing' ]
+        MAIL_DIR + os.sep + 'Identity2' + os.sep + 'outgoing']
 
     for d in dirs:
         if d != '':
             if not os.path.isdir(d):
-                os.makedirs(d, mode=0o700)
+                os.makedirs(
+                    d,
+                    mode=0o700)
                 if platform.system().lower() != 'windows':
                     debug_msg(
                         2,
@@ -4954,14 +5126,18 @@ def nm_start(batch=False):
                     # The ownership thing would test for problems if the user
                     # copied an old archive to a new computer or user ID.
                     # (it might fail, but at least you will know why)
-                    shutil.chown(d, user=pwd.getpwnam(os.getlogin()).pw_uid,
+                    shutil.chown(
+                        d,
+                        user=pwd.getpwnam(os.getlogin()).pw_uid,
                         group=pwd.getpwnam(os.getlogin()).pw_gid)
 
     # Some verification.
     if 'screen_width' not in MAIN_CONFIG['SETTINGS'].keys():
         print('WARNING. Your options file does not contain an entry '
-            + 'for screen_width. Defaulting to 80')
-        MAIN_CONFIG['SETTINGS']['screen_width'] = '80'  # All values are strings.
+              + 'for screen_width. Defaulting to 80')
+        # All values are strings in the config file,
+        # including screen width.
+        MAIN_CONFIG['SETTINGS']['screen_width'] = '80'
         time.sleep(.3)
 
     if 'screen_height' not in MAIN_CONFIG['SETTINGS'].keys():
@@ -4995,14 +5171,14 @@ def nm_start(batch=False):
         MAIN_CONFIG['SETTINGS']['download_directory'] = ddd
         os.makedirs(ddd, exist_ok=True)
         time.sleep(.7)
-    ######################################################################
+    # ####################################################################
     try:
         VERBOSITY = int(MAIN_CONFIG['SETTINGS']['verbosity'])
     except:
         VERBOSITY = 4
 
     debug_msg(4, 'Your VERBOSITY setting is ' + str(VERBOSITY))
-    ######################################################################
+    # ####################################################################
 
     # Many items in the config file contain encrypted values,
     # but they are not decrypted until they are needed.
@@ -5074,13 +5250,13 @@ def pw_hash2(iterations=97831, receipt_fname=None):
             if not os.path.isfile(receipt_fname):
                 need_new_receipt = True
                 print('WARNING: Could not get the name of '
-                    + 'the password receipt file from the '
-                    + 'configuration table.  The file is usually '
-                    + 'in your home directory and '
-                    + 'called natmsgsc.ini or .natmsgsc. '
-                    + 'I wil put the file in')
+                      + 'the password receipt file from the '
+                      + 'configuration table.  The file is usually '
+                      + 'in your home directory and '
+                      + 'called natmsgsc.ini or .natmsgsc. '
+                      + 'I wil put the file in')
                 print('You can try to continue or try to restore '
-                    + 'the configuration file.')
+                      + 'the configuration file.')
                 junk = input('Press any key to continue....')
     else:
         if not os.path.isfile(receipt_fname):
@@ -5091,7 +5267,8 @@ def pw_hash2(iterations=97831, receipt_fname=None):
         pw = ''
         while pw == '':
             try:
-                pw = getpass.getpass('Enter the password for Natural ' \
+                pw = getpass.getpass(
+                    'Enter the password for Natural '
                     + 'Message simple client: ')
             except KeyboardInterrupt:
                 print()  # move to a new output line
@@ -5103,7 +5280,11 @@ def pw_hash2(iterations=97831, receipt_fname=None):
         # This routine is based on the one in RNCryptor (with
         # the salt modified):
         print('Please wait while the password is being hashed.')
-        pw_hashed = KDF.PBKDF2(pw, b'00', dkLen=32, count=iterations,
+        pw_hashed = KDF.PBKDF2(
+            pw,
+            b'00',
+            dkLen=32,
+            count=iterations,
             prf=lambda p, s: hmac.new(p, s, hashlib.sha256).digest())
 
         return(pw_hashed)
@@ -5127,7 +5308,7 @@ def pw_hash2(iterations=97831, receipt_fname=None):
 
                     if saved_receipt != static_receipt_txt:
                         print('BAD pw')
-                        pw_hashed = None # force another iteration
+                        pw_hashed = None  # Force another iteration.
                     else:
                         debug_msg(5, 'GOOD pw')
             else:
@@ -5140,7 +5321,7 @@ def pw_hash2(iterations=97831, receipt_fname=None):
                 print('password in the future.')
                 print('')
                 print('If you are starting the client application '
-                    + 'for the first time,')
+                      + 'for the first time,')
                 print('then proceed, else enter "n" to quit.')
                 print(' ')
 
@@ -5181,7 +5362,6 @@ def pw_hash2(iterations=97831, receipt_fname=None):
                         fd.write(receipt)
                         os.fsync(fd.fileno())
 
-
                     need_new_receipt = False
                     print('')
                     print(
@@ -5193,11 +5373,11 @@ def pw_hash2(iterations=97831, receipt_fname=None):
                         iterations=iterations,
                         receipt_fname=receipt_fname)
                     if pw_hashed_new != pw_hashed:
-                        pw_hashed = None # force another loop
+                        pw_hashed = None  # Force another loop.
 
         else:
             print('There might be a problem with the '
-                + 'pw_hash routine.  You can try again or kill the program.')
+                  + 'pw_hash routine.  You can try again or kill the program.')
             input('Press any key to continue...')
 
     return(pw_hashed)
@@ -5224,14 +5404,15 @@ def roll_gdg(file_path):
     # current file:
 
     debug_msg(4, 'Running roll_gdg with fname ' + file_path)
+
     def gdg_filter(s):
         j = len(s) - 1
         while j >= 0:
             while s[j].isnumeric():
                 j -= 1
             if s[j] == 'G':
-                # looks good so far, look for a dot
-                if s[j - 1]== '.':
+                # Looks good so far, look for a dot
+                if s[j - 1] == '.':
                     if (j + 5) == len(s):
                         return(True)
                 else:
@@ -5265,10 +5446,10 @@ def roll_gdg(file_path):
 
         debug_msg(5, 'Highest gdg found was: ' + highest_gdg)
         if highest_gdg != '':
-            gnbr = int(highest_gdg[-4:])  + 1
+            gnbr = int(highest_gdg[-4:]) + 1
         else:
             gnbr = 1
-        new_basename = bname  + '.G' + "%04d" % gnbr
+        new_basename = bname + '.G' + "%04d" % gnbr
         new_path = current_dir + os.sep + new_basename
         shutil.move(file_path, new_path)
 
@@ -5289,11 +5470,20 @@ def nm_select_editor():
 
     found_editors = []
 
-    unix_prefixes = ['/usr/bin/', '/bin/' , '/usr/local/bin/']
-    unix_editors = ['nano', 'pico', 'leafpad', 'gedit', 'vim',
-        'emacs', 'vi', 'mousepad', 'kwrite', 'kate']
+    unix_prefixes = ['/usr/bin/', '/bin/', '/usr/local/bin/']
+    unix_editors = [
+        'nano',
+        'pico',
+        'leafpad',
+        'gedit',
+        'vim',
+        'emacs',
+        'vi',
+        'mousepad',
+        'kwrite',
+        'kate']
 
-    other_editors = [ 'notepad.exe', '/Applications/TextEdit.app']
+    other_editors = ['notepad.exe', '/Applications/TextEdit.app']
 
     if 'editor_command' not in MAIN_CONFIG['SETTINGS'].keys():
         MAIN_CONFIG['SETTINGS']['editor_command'] = ''
@@ -5315,13 +5505,15 @@ def nm_select_editor():
                     pass
 
         if len(found_editors) == 0:
-            return(print_err(93459, 'Failed to obtain a choice '
+            return(print_err(
+                93459,
+                'Failed to obtain a choice '
                 + 'for the editor.'))
         else:
             # There was at least one 'found editor' in the list.
             idx, choice = nm_menu_choice(
                 found_editors,
-                title='Select the path and ' \
+                title='Select the path and '
                 + 'program name for a text editor that you want to use.')
 
             if idx < 0:
@@ -5330,7 +5522,8 @@ def nm_select_editor():
                     'Failed to obtain a choice for the editor.'))
             else:
                 the_pgm = nm_encrypt_local_txt(choice, SESSION_PW)
-                MAIN_CONFIG['SETTINGS']['editor_command'] = the_pgm #encrypted
+                # The value for the editor is encrypted.
+                MAIN_CONFIG['SETTINGS']['editor_command'] = the_pgm
                 nm_write_config()
 
     return(0)
@@ -5399,8 +5592,8 @@ def nm_clean_utf8_text(data_raw):
                 unrtf_pgm = None
                 try:
                     unrtf_pgm = nm_decrypt_local_txt(
-                            MAIN_CONFIG['SETTINGS']['unrtf_pgm'],
-                            SESSION_PW)
+                        MAIN_CONFIG['SETTINGS']['unrtf_pgm'],
+                        SESSION_PW)
                 except:
                     pass
 
@@ -5408,7 +5601,7 @@ def nm_clean_utf8_text(data_raw):
                     if os.path.isfile(unrtf_pgm):
                         try:
                             pid = subprocess.Popen(
-                                [ unrtf_pgm, '--text', '--quiet', '--nopict'],
+                                [unrtf_pgm, '--text', '--quiet', '--nopict'],
                                 stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
@@ -5430,11 +5623,11 @@ def nm_clean_utf8_text(data_raw):
 
     if show_warning:
         print('WARNING: Could not run the unrtf program to remove '
-            + 'RTF codes.  RTF codes might appear in the output.')
+              + 'RTF codes.  RTF codes might appear in the output.')
         print('If you install the unrtf program, you can point to '
-            + 'it using the settings option in the main menu.')
-        print('If you already have the unrtf program, you can point to it ' \
-            + 'using the settings menu that is shown on the main menu.')
+              + 'it using the settings option in the main menu.')
+        print('If you already have the unrtf program, you can point to it '
+              + 'using the settings menu that is shown on the main menu.')
         time.sleep(1)
 
     if unrtf_out is not None:
@@ -5442,9 +5635,11 @@ def nm_clean_utf8_text(data_raw):
 
         # Split the data into lines so that I can kill the unRTF
         # header lines.
-        data_array = unrtf_out.replace(bytes('\r\n', 'utf-8'), bytes('\n', \
-            'utf-8')).replace(bytes('\r', 'utf-8'), bytes('\n', \
-            'utf-8')).split(bytes('\n', 'utf-8'))
+        data_array = unrtf_out.replace(
+            bytes('\r\n', 'utf-8'),
+            bytes('\n', 'utf-8')).replace(
+                bytes('\r', 'utf-8'),
+                bytes('\n', 'utf-8')).split(bytes('\n', 'utf-8'))
 
         if data_array[0][0:len(UNRTF_HDR)] == bytes(UNRTF_HDR, 'utf-8'):
             # There is an unRTF header.
@@ -5473,7 +5668,7 @@ def nm_clean_utf8_text(data_raw):
                 # ADDD VERBOSITY CHECK
                 debug_msg(
                     3,
-                    'The RTF data produced non-UTF-8 characters, so some ' \
+                    'The RTF data produced non-UTF-8 characters, so some '
                     + 'characters will be escaped.')
                 for k in range(len(data_array)):
                     data_array[k] = repr(data_array[k])[2:-1]
@@ -5486,9 +5681,11 @@ def nm_clean_utf8_text(data_raw):
         # by the unrtf program.
 
         # Standardize EOL and split into lines.
-        data_array = data_raw.replace(bytes('\r\n', 'utf-8'), bytes('\n', \
-            'utf-8')).replace(bytes('\r', 'utf-8'), bytes('\n', \
-            'utf-8')).split(bytes('\n', 'utf-8'))
+        data_array = data_raw.replace(
+            bytes('\r\n', 'utf-8'),
+            bytes('\n', 'utf-8')).replace(
+                bytes('\r', 'utf-8'),
+                bytes('\n', 'utf-8')).split(bytes('\n', 'utf-8'))
 
         # This decode is a test to see if there are any non-UTF8 characters.
         try:
@@ -5561,11 +5758,11 @@ def nm_file_chooser(
 
                     # The 'answer' will be just the filename without
                     # the full path.
-                    ### nm_clear_screen()  # Avoid circular ref.
+                    # # nm_clear_screen()  # Avoid circular ref.
                     print('\n\n\n')
                     idx, answer = nm_menu_choice(choices, prompt=prompt)
                     if answer in dirs:
-                        if mode=='file':
+                        if mode == 'file':
                             top = top + os.sep + answer
                         else:
                             # Directory mode
@@ -5585,11 +5782,11 @@ def nm_file_chooser(
                         finished = False
                         break
                     elif os.path.isfile(top + os.sep + answer):
-                        # a file was selected, break out of the loop
+                        # A file was selected, break out of the loop
                         finished = True
                         top = top + os.sep + answer
                         break
- 
+
             if top is None:
                 break
             elif finished:
@@ -5618,7 +5815,9 @@ def nm_search_files(top_directory, search_string):
     max_read_size = 1024 * 1024 * 15
 
     if not os.path.isdir(top_directory):
-        return(print_err(42000, 'Error. The specified location is not a '
+        return(print_err(
+            42000,
+            'Error. The specified location is not a '
             + 'directory: ' + str(top_directory)))
 
     found_files = []
