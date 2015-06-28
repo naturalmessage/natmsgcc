@@ -84,14 +84,18 @@ privacy_notice='This electronic message, and any content linked from it, is for 
 ########################################################################
 def nm_send_shards(wrk_dir, sargs_array):
 	"""
-	This will read an array of shard_send_queue_args objects
+	This will read an array of ShardSendQueueArgs objects
 	and send (push) the shards from disk to shard servers.
 
 	All shards must be staged in the same working directory (wrk_dir).
+
+    This is called from shard_and_send(), which initiates the shard
+    sending process.
 	"""
 
 	global shard_send_queue
 
+	natmsgclib.debug_msg(5, 'Starting nm_send_shards() with data:' + repr(sargs_array))
 	# start a thread an add to the queue to process the shards.
 	for sa in sargs_array:
 		if sa.wrk_dir != wrk_dir:
@@ -100,7 +104,7 @@ def nm_send_shards(wrk_dir, sargs_array):
 
 		# start a thread for this shard
 		t = natmsgclib.thread_shard_send(shard_send_queue)
-		#t.setDaemon(True)
+		# Start thread_shard_send, which listens to shard_send_queue
 		t.start()
 		# Put the shard arguments into the queue (the put action does
 		# not have a return value)
@@ -471,17 +475,31 @@ def shard_and_send(input_fname, pw, kek,  outbound_staging_dir,
 			##shard_letter = chr(ord('a') + j)
 			shard_letter = str(j + 1)
 
-		sargs = natmsgclib.shard_send_queue_args(web_host='https://106.187.53.102:4430',
+        ##############################################################
+        # create three sets of sargs (ShardSendQueueArgs):
+        # one for password shards,
+        # one for small shards,
+        # one for large shards.
+        #
+        # THIS PART NEEDS TO CHANGE TO USE SHARD SERVERS FROM
+        # THE SERVER FARM LIST:
+        # THIS PART NEEDS TO CHANGE TO USE SHARD SERVERS FROM
+        # THE SERVER FARM LIST:
+		sargs = natmsgclib.ShardSendQueueArgs(
+            web_host='https://shard01.naturalmessage.com',
 			shard_id=shard_id, 
-			input_fpath=os.path.join(outbound_staging_dir, metadata_prefixes['password'] \
-			+ shard_letter), wrk_dir=outbound_staging_dir, add_proof_of_work=True)
+			input_fpath=os.path.join(
+                outbound_staging_dir, metadata_prefixes['password']
+			    + shard_letter),
+            wrk_dir=outbound_staging_dir,
+            add_proof_of_work=True)
 
 		sargs_array.append(sargs)
 		# - - - - 
 		# This will eventually select a web host from the serverFarm list.
 		shard_id = natmsgclib.nm_gen_shard_id()
 		# use the same shard_letter as above.
-		sargs = natmsgclib.shard_send_queue_args(web_host='https://106.187.53.102:4430',
+		sargs = natmsgclib.ShardSendQueueArgs(web_host='shard01.naturalmessage.com',
 			shard_id=shard_id, 
 			input_fpath=os.path.join(outbound_staging_dir, metadata_prefixes['preamble'] \
 				+ shard_letter), wrk_dir=outbound_staging_dir, add_proof_of_work=True)
@@ -493,7 +511,7 @@ def shard_and_send(input_fname, pw, kek,  outbound_staging_dir,
 			# This will eventually select a web host from the serverFarm list.
 			shard_id = natmsgclib.nm_gen_shard_id()
 			# use the same shard_letter as above.
-			sargs = natmsgclib.shard_send_queue_args(web_host='https://106.187.53.102:4430',
+			sargs = natmsgclib.ShardSendQueueArgs(web_host='shard01.naturalmessage.com',
 				shard_id=shard_id, 
 				input_fpath=os.path.join(outbound_staging_dir, metadata_prefixes['big'] \
 				+ shard_letter),
@@ -1566,7 +1584,7 @@ def nm_send_message(outbound_staging_dir, pw, kek, msg_fname=None,
 		dir=outbound_staging_dir, suffix='.json')
 
 	# --   --    --   --   --   --   -   
-	# Now tmpfname is either the file to send for batch or interactive.
+	# Now tmpfname is the file to send for batch or interactive.
 	if dat == bytes('{\\rtf', 'utf-8'):
 		tmpfname_old = os.path.join(outbound_staging_dir, '__NM.txt')
 		tmpfname = os.path.join(outbound_staging_dir, '__NM.rtf')
@@ -1740,20 +1758,11 @@ def nm_send_message(outbound_staging_dir, pw, kek, msg_fname=None,
 			# the user does not want to send this
 			return((0, None))
 				
-	# TO DO: verify box id formats
-	# TO DO: verify box id formats
-	# TO DO: verify box id formats
-
-		
-	# Add attachments here... get default input dir for attachements from MAIN_CONFIG
-	#	f_list=['bigfile.txt'], 
-
-
 	# Add review /loop here
 
 	flist.insert(0, tmpfname) # put the message text first in the list of files
 
-	# Now send it. To Do: add attachments to f_list
+    # Archive the file(s) using the NatMsg archiver:
 	err_nbr, err_msg, return_dict = natmsgclib.nm_archiver2(action='c', 
 		arch_fname=archive_fname,
 		f_list=flist, message_included=True,
@@ -1762,6 +1771,7 @@ def nm_send_message(outbound_staging_dir, pw, kek, msg_fname=None,
 		return((natmsgclib.print_err(13500, 'The archive-creation process failed. ' \
 			+ err_msg), None))
 
+	# Now send it.
 	err_nbr, old_school_link = shard_and_send(archive_fname, pw=pw,  
 		kek=kek, dest_box_id=dest_box_id, 
 		subject=subject, reply_to=reply_to_box_id, batch=batch,
