@@ -11,23 +11,18 @@
 # To adapt to Chris's client, this will put an hard-coded
 # RTF note into the main "message" that says to see the
 # attachments, and the attachments might be DOS text.
-
+#
 # Get chris to add a "file_type" code for "message"
 # to accept text or RTF.
 ################################## 
 # Bob TEMP NOTES:
-# which gui shold I use : https://stackoverflow.com/questions/3191373/what-is-the-best-python-gui-ide-toolkit-for-windows
-# wxPythonG
-# wxPython has a 'rich text control' http://wxpython.org/Phoenix/docs/html/richtextctrl_overview.html "Despite its name, it cannot currently read or write RTF (rich text format) files. Instead, it uses its own XML format, and can also read and write plain text. In future we expect to provide RTF or OpenDocument file capabilities."
-# pyQT has a built-in rich text editor: https://en.wikipedia.org/wiki/Scintilla_%28editing_component%29
+# pyQT has a built-in rich text editor:
+# https://en.wikipedia.org/wiki/Scintilla_%28editing_component%29
 # pyqt:http://www.riverbankcomputing.com/software/pyqt/intro
 ################################## 
 #
 # get RNCryptor from https://github.com/RNCryptor/RNCryptor-python
-# or directly from:
-#  https://raw.githubusercontent.com/RNCryptor/RNCryptor-python/master/RNCryptor.py
-
-#import datetime
+#
 import natmsgcc.RNCryptor as RNCryptor
 import base64
 import codecs
@@ -42,14 +37,19 @@ import sys
 import tempfile
 import time
 
-PUB_ID1='PUB002016013113CC95900BF7D64498E8A23D6D00E3862CF3B29E2B597DB492BC65CCADF11AF529AF8914B7B2B4290E6F86D54DC1E6C4BA0233C5BB327144969FC71BD7AB48B0'
-PRV_ID1='PRV004001010113CC95900BF7D64498E8A23D6D00E3862CF3B29E2B597DB492BC65CCADF11AF529AF8914B7B2B4290E6F86D54DC1E6C4BE43CAE157A44F83D5D51A21A072733D'
+PUB_ID1='PUB002016013113CC95900BF7D64498E8A23D6D00E3862CF3B29E2B597DB492B'
+        + 'C65CCADF11AF529AF8914B7B2B4290E6F86D54DC1E6C4BA0233C5BB3271449'
+        + '69FC71BD7AB48B0'
+PRV_ID1='PRV004001010113CC95900BF7D64498E8A23D6D00E3862CF3B29E2B597DB492B'
+        + 'C65CCADF11AF529AF8914B7B2B4290E6F86D54DC1E6C4BE43CAE157A44F83D'
+        + '5D51A21A072733D'
 
 max_preamble_shard_size = 127
 shard_count = 3
 # The metadata prefixes must match what the other clients
-# are using, and to simplify programming, they should be unique and equal lengths
-#metadata_prefixes = {'password': '_PW', 'preamble':'_PA', 'big': '_BG'} 
+# are using, and to simplify programming, they should be unique
+# and equal lengths.
+# # metadata_prefixes = {'password': '_PW', 'preamble':'_PA', 'big': '_BG'} 
 metadata_prefixes = {'password': '_P', 'preamble':'_SMALL', 'big': '_BIG'} 
 max_send_attempts = 4 # nbr of attempts for each shard server before quitting
 
@@ -61,23 +61,14 @@ template_msg = '{\rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}\f0\pard ' \
 shard_send_queue = queue.Queue()
 shard_receive_queue = queue.Queue()
 
-SMD_PREAMBLE='{"creatorVersion":"nmx1","meta":"'
-privacy_notice='This electronic message, and any content linked from it, is for the sole use of the intended recipient and contains confidential and privileged information. If you received this message by error, please delete it from your computer and inform the sender. Any unauthorized review, use, disclosure or distribution of this message, items linked from it, or metadata about its contents is prohibited.'
-
-
-#### cancelled to match to OS X #########################################################################
-#### cancelled to match to OS X ## Verify that all the metadata_prefixes are the same length.
-#### cancelled to match to OS X ## This will simplify the process of reading the shards to reassemble them.
-#### cancelled to match to OS X #save_len = 0
-#### cancelled to match to OS X #for x in metadata_prefixes.values():
-#### cancelled to match to OS X #	if save_len == 0:
-#### cancelled to match to OS X #			save_len = len(x)
-#### cancelled to match to OS X #
-#### cancelled to match to OS X #	if len(x) != save_len:
-#### cancelled to match to OS X #		natmsgclib.print_err(3600, 'The values in metadata_prefixes are not all the same length.')
-#### cancelled to match to OS X #		sys.exit(234)
-#### cancelled to match to OS X #
-#### cancelled to match to OS X #save_len = None
+SMD_PREAMBLE = '{"creatorVersion":"nmx1","meta":"'
+privacy_notice = 'This electronic message, and any content linked from it, '
+    + 'is for the sole use of the intended recipient and contains '
+    + 'confidential and privileged information. If you received this '
+    + 'message by error, please delete it from your computer and inform '
+    + 'the sender. Any unauthorized review, use, disclosure or '
+    + 'distribution of this message, items linked from it, or metadata '
+    + 'about its contents is prohibited.'
 
 ########################################################################
 ########################################################################
@@ -95,7 +86,9 @@ def nm_send_shards(wrk_dir, sargs_array):
 
 	global shard_send_queue
 
-	natmsgclib.debug_msg(5, 'Starting nm_send_shards() with data:' + repr(sargs_array))
+	natmsgclib.debug_msg(
+        5,
+        'Starting nm_send_shards() with data:' + repr(sargs_array))
 	# start a thread an add to the queue to process the shards.
 	for sa in sargs_array:
 		if sa.wrk_dir != wrk_dir:
@@ -113,7 +106,9 @@ def nm_send_shards(wrk_dir, sargs_array):
 		# I could sleep here if there are too many thread running at a time
 
 	# print a status message every few seconds until all shards are sent.
-	natmsgclib.show_shard_status(wrk_dir=wrk_dir, shard_args=sargs_array) # this will loop until shards are all sent
+	natmsgclib.show_shard_status(
+        wrk_dir=wrk_dir,
+        shard_args=sargs_array)  # This will loop until shards are all sent.
 
 	# Double check that the queue has been processed, then loop until all
 	# shards have a status of 'sent' in the disk status files.
@@ -122,7 +117,9 @@ def nm_send_shards(wrk_dir, sargs_array):
 	completed = False
 	while not completed:
 		# wait till all is done
-		natmsgclib.debug_msg(5, 'The next command will wait until all thread post a *done* code.')
+		natmsgclib.debug_msg(
+            5,
+            'The next command will wait until all thread post a *done* code.')
 		shard_send_queue.join() # safety measure to block until threads are done
 		success_count = 0
 		failed_count = 0
@@ -193,9 +190,11 @@ def nm_send_shards(wrk_dir, sargs_array):
 				+ str(success_count))
 
 		if send_attempts > 5:
-			natmsgclib.print_err(10600, 'There were too many send attempts.  Not sending message')
-			# too many retries -- failed send
-			return(10600) # change this to a return when I refactor ## To Do: change to return()
+			natmsgclib.print_err(
+                10600,
+                'There were too many send attempts.  Not sending message')
+			# Too many retries -- failed send.
+			return(10600) 
 
 		if not message_sent:
 			# wait before trying again
@@ -203,7 +202,8 @@ def nm_send_shards(wrk_dir, sargs_array):
 
 	# to do: I need to distinguish between succes and failure 
 	# rather than mere completion
-	print('===== The *send* task is complete, but I have not verify success. fix this!!!!!!!!!!!!!!!!!!!!!!!!!!.')
+	print('===== The *send* task is complete, '
+          + 'but I have not verify success. fix this!!!!!!!!!!!!!!!!!!!!!!.')
 	return(0)
 ########################################################################
 ########################################################################
@@ -319,23 +319,18 @@ def shard_and_send(input_fname, pw, kek,  outbound_staging_dir,
 	subject_reply_to = json.dumps({"subject": subject,
 		"replyto": reply_to}, indent=None, separators=(',', ':'))
 	try:
-		subject_reply_to_enc_b64 = base64.b64encode(cryptor.encrypt(subject_reply_to, pw))
+		subject_reply_to_enc_b64 = base64.b64encode(
+            cryptor.encrypt(subject_reply_to, pw))
 	except:
 		e = str(sys.exc_info()[0:2])
-		return((natmsgclib.print_err(11000, 'Failed to execute RNCryptor for the subject ' \
-		+ 'line and reply-to fields. ' + e), None))
-
-
-	##------------------------------------------------------
-	### old style before binary stransfer
-	#msg_enc_b64 = base64.b64encode(bytes(msg_enc)) # old style before binary transfer
-	#natmsgclib.debug_msg(7, 'Msg base64 ' + repr(msg_enc_b64))
-	#msg_enc = None #avoid confusion later
+		return((natmsgclib.print_err(
+            11000,
+            'Failed to execute RNCryptor for the subject '
+		    + 'line and reply-to fields. ' + e), None))
 
 	natmsgclib.debug_msg(9, 'Msg contents: ' + repr(msg_enc))
 
-
-	##------------------------------------------------------
+	# ------------------------------------------------------
 	# Slice the encrypted message into 3 (shard_count) pieces/shards:
 	natmsgclib.debug_msg(1, 'Slicing the main message into shards...')
 	preamble_chunks = None
@@ -393,7 +388,9 @@ def shard_and_send(input_fname, pw, kek,  outbound_staging_dir,
 	## Encrypt the first password with the key-encryption-key:
 	##  (the key encryption key, kek, is the 'passpass' in Chris' terminology).
 	## Encrypt the password with the kek (both are used in base64 format)
-	natmsgclib.debug_msg(1, 'Encrypting the password with the key encryption key...')
+	natmsgclib.debug_msg(
+        1,
+        'Encrypting the password with the key encryption key...')
 	try:
 		pw_enc = cryptor.encrypt(pw, kek)
 	except:
@@ -445,7 +442,9 @@ def shard_and_send(input_fname, pw, kek,  outbound_staging_dir,
 	# (I will need to add another loop 
 	# around each of the following subparts of the 'j'
 	# loop... to handle failed connections to shard servers)
-	natmsgclib.debug_msg(1, 'Preparing the metadata and pushing shards to shard servers...')
+	natmsgclib.debug_msg(
+        1,
+        'Preparing the metadata and pushing shards to shard servers...')
 	sent = False
 	# url_array is the list of URLs (and related data) for shards that have been 
 	# successfully pushed to shard servers.
@@ -734,10 +733,14 @@ def nm_receive_shards(out_dir, arg_array):
 		if finalized_count == len(arg_array):
 			message_received = True
 		else:
-			natmsgclib.debug_msg(4, 'Not all shards ready.  Success count ' + str(success_count))
+			natmsgclib.debug_msg(
+                4,
+                'Not all shards ready.  Success count ' + str(success_count))
 
 		if receive_attempts > 5:
-			natmsgclib.print_err(11900, 'There were too many receive attempts. Fetch failed.')
+			natmsgclib.print_err(
+               11900,
+                'There were too many receive attempts. Fetch failed.')
 			break # change this to a return when I refactor ## To Do: change to return()
 
 		if not message_received:
@@ -754,9 +757,15 @@ def nm_receive_shards(out_dir, arg_array):
 # then I process each of those files to grab the shards). 
 #
 
-def read_inbox(fetch_id, private_box_id=None, old_school_link=None,  max_shard_count=3,
-	host='https://naturalmessage.com', port_nbr=443,
-	delete_shard_for_testing=False, delete_temp_files=False):
+def read_inbox(
+        fetch_id,
+        private_box_id=None,
+        old_school_link=None,
+        max_shard_count=3,
+	    host='https://naturalmessage.com',
+        port_nbr=443,
+	    delete_shard_for_testing=False,
+        delete_temp_files=False):
 	"""
 	This will either read all the messages for a given private_box_id or
 	it will fetch one message associated with a shard metadata ID (smd_id).
@@ -1020,7 +1029,9 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 						smd_json = json.loads(smd_data.decode('utf-8')) # not wrapped in base64
 					except:
 						# one time test for a double wrap base64
-						smd_json = json.loads(base64.b64decode(base64.b64decode(smd_data)).decode('utf-8'))
+						smd_json = json.loads(
+                            base64.b64decode(
+                                base64.b64decode(smd_data)).decode('utf-8'))
 						pass
 
 
@@ -1056,7 +1067,7 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 						
 				# Note that this shard_dir is in the loop and can change many times!!
 				# In need to know all of the temp locations so that I can delete them later.
-				save_temp_dirs.append(shard_dir) # things I need to delete later (if status is good)
+				save_temp_dirs.append(shard_dir)
 				natmsgclib.debug_msg(3, 'Shard dir is: ' + shard_dir)
 	
 				fname_pw_reassembled =  shard_dir + os.sep + 'password' 
@@ -1069,7 +1080,10 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 						# The final archive has already been reassembled, so skip the
 						# remainder of this iteration (maybe this is recovery from
 						# a power failure).
-						natmsgclib.debug_msg(5, 'Skipping reassembly of a message that already exists: ' \
+						natmsgclib.debug_msg(
+                            5,
+                            'Skipping reassembly of a message that '
+                            + 'already exists: '
 							+ fname_msgarchive_reassembled)
 						next
 					else:
@@ -1104,7 +1118,8 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 				# --------- fetched.
 				arg_array = []
 				for u in url_array:
-					# Check the status of this shard.  If it is not completed, fetch it and update the status.
+					# Check the status of this shard.  If it is not completed,
+                    # fetch it and update the status.
 					shard_id = u['key']  # from smd
 					shard_status_fname = os.path.join(shard_dir, shard_id + '.status')
 					err_nbr, shard_status = natmsgclib.get_status(shard_status_fname)
@@ -1261,9 +1276,11 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 							natmsgclib.print_err(13400, 'Reassembly of big shards failed.' \
 								+ str(err_nbr))
 	
-				natmsgclib.debug_msg(3, 'The temporary shard download directory is: ' + shard_dir)
+				natmsgclib.debug_msg(
+                    3,
+                    'The temporary shard download directory is: ' + shard_dir)
 	
-				### #---------------------------------------------------------------------
+				# # #---------------------------------------------------------------------
 				# Glue the preamble and big shard if there is a big shard
 				fd_preamble_in = open(fname_preamble_reassembled, 'rb')
 				fd_msgarchive = open(fname_msgarchive_reassembled , 'wb+')
@@ -1288,14 +1305,15 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 				natmsgclib.debug_msg( 4, 'Testing pw and kek... pw inputfname ' \
 						+ repr(fname_pw_reassembled) + ' kek value: ' + repr(kek_from_smd))
 
-				## old style before binary transfer (Chris should remove the extra base64 layer)
+				# # old style before binary transfer
+                # # (Chris should remove the extra base64 layer)
 				pw = cryptor.decrypt(base64.b64decode(fd_pw_in.read()), kek_from_smd)
-				##pw = cryptor.decrypt(fd_pw_in.read(), kek_from_smd)
+				# #pw = cryptor.decrypt(fd_pw_in.read(), kek_from_smd)
 	
 				try:
-					###### old style before binary transfer
-					#####fd_msgarchive_out.write(gzip.decompress(cryptor.decrypt( \ 
-					#####	base64.b64decode(fd_msgarchive.read()), pw)))
+					# #### old style before binary transfer
+					# ###fd_msgarchive_out.write(gzip.decompress(cryptor.decrypt( \ 
+					# ###	base64.b64decode(fd_msgarchive.read()), pw)))
 					fd_msgarchive_out.write(gzip.decompress(cryptor.decrypt( \
 						fd_msgarchive.read(), pw)))
 				except:
@@ -1317,9 +1335,6 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 				fd_msgarchive.close()
 				fd_msgarchive_out.close()
 	
-				### 'The decrypted message archive is in: ' + fname_msgarchive_reassembled + '.decrypted'
-				# unarchive
-	
 				# Copy the archive file to the permanent 'received' box. pw
 				received_fname = MAIL_DIR + os.sep + current_identity + os.sep \
 					+ 'received' + os.sep + fetch_id + ddd + '.json'
@@ -1337,12 +1352,16 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 				# Capture inbound metadata that came from the shard metadata file
 				# (as opposed to coming from the reassembled archive file):
 				try:
-					subject_reply_to = cryptor.decrypt(base64.b64decode(bytes(subject_reply_to_enc, 'utf-8')), pw).decode('utf-8')
+					subject_reply_to = cryptor.decrypt(
+                        base64.b64decode(
+                            bytes(subject_reply_to_enc, 'utf-8')),
+                        pw).decode('utf-8')
 					meta_json_d.update({'meta': json.loads(subject_reply_to)})
 					meta_json_d.update({'date': msg_date})
 				except:
 					e = str(sys.exc_info()[0:2])
-					print('WARNING: I could not decrypt the subject and reply-to metadata file into JSON. ' + e)
+					print('WARNING: I could not decrypt the subject and '
+                        + 'reply-to metadata file into JSON. ' + e)
 				else:
 					with open(meta_fname_out, 'w') as fd:
 						# Write json to a text file without extra whitespace.
@@ -1360,13 +1379,16 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 						meta_tmp = fd.read()
 	
 				except:
-					print('WARNING. There was an error trying to get metadata, but I will continue ' \
-						+ 'processing to avoid losing messages. I was trying to read: ' + meta_fname_in)
+					print('WARNING. There was an error trying to get '
+                        + 'metadata, but I will continue '
+						+ 'processing to avoid losing messages. I was '
+                        + 'trying to read: ' + meta_fname_in)
 				try:
 					 tmp_d = json.loads(meta_tmp)
 				except:
 					tmp_d = {}
-					print('WARNING: I could convert the subject line to json.  I will omit the subject line')
+					print('WARNING: I could convert the subject line to '
+                        + 'JSON.  I will omit the subject line')
 	
 				if 'msg_snippet' in tmp_d.keys():
 					meta_json_d.update({'msg_snippet': tmp_d['msg_snippet']})
@@ -1374,7 +1396,8 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 				if 'dest' in tmp_d.keys():
 					meta_json_d.update({'dest': tmp_d['dest']})
 				else:
-					input('I did not find the destination box ID in keys.  This is probably programmer error: ' \
+					input('I did not find the destination box ID in keys.  '
+                        + 'This is probably programmer error: '
 						+ str(tmp_d) + os.linesep + 'Press any key to continue...')
 				#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 				#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -1391,7 +1414,8 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
 				# Extract just the main message (not the attachments) and the number of
 				# attachments so that
 				# I can capter some of the text for the msg_meta_browswer.
-				# Note about nm_archiver2: During extract, data goes to disk if an output_dir is specified,
+				# Note about nm_archiver2: During extract, data goes to disk
+                # if an output_dir is specified,
 				# or to the third recturn value if not output dir is specified.
 				err_nbr, err_msg, return_dict = natmsgclib.nm_archiver2(action='x', 
 					arch_fname=fname_msgarchive_reassembled + '.decrypted',
@@ -1594,12 +1618,15 @@ def nm_send_message(outbound_staging_dir, pw, kek, msg_fname=None,
 		if dest_box_id is None:
 			# add destination
 			# to do: add an option for 'enter a new id'
-			# TO DO: ALLOW ENTRY OF A NEW ID BY CALLING add_contact an repeating this section.
+			# TO DO: ALLOW ENTRY OF A NEW ID BY CALLING add_contact
+            # an repeating this section.
 			good = False
 			while not good:
-				print('Note: if you do not see the destination box ID, add it to the contacts ' \
+				print('Note: if you do not see the destination box ID, '
+                    + 'add it to the contacts '
 					+ 'list from the main menu.')
-				err_nbr, box_dict , descr = nm_select_contact(prompt='Select the destination ' \
+				err_nbr, box_dict , descr = nm_select_contact(
+                    prompt='Select the destination '
 					+ '(or Q to quit):')
 
 				if err_nbr !=0:
@@ -1641,7 +1668,8 @@ def nm_send_message(outbound_staging_dir, pw, kek, msg_fname=None,
 		if subject is None:
 			# There was no subject passed as an argument to this function,
 			# so prompt the user for one:
-			subject = natmsgclib.input_no_confirm("Enter a subject line (it will be encrypted): ")
+			subject = natmsgclib.input_no_confirm(
+                "Enter a subject line (it will be encrypted): ")
 		
 	else:
 		# For batch mode, subject should be supplied as an argument.
@@ -1810,7 +1838,9 @@ def nm_add_contact(identity_nbr=None, box_id=None):
 	if box_id != '':
 		rc = natmsgclib.nm_verifiy_id(box_id, expected_prefix='PUB')
 		if rc != 0:
-			return(natmsgclib.print_err(6467, 'The box_id sent to nm_add_contact is invalid: ' \
+			return(natmsgclib.print_err(
+                6467,
+                'The box_id sent to nm_add_contact is invalid: '
 				+ box_id))
 
 	if identity_nbr is None:
@@ -1871,19 +1901,9 @@ def nm_add_contact(identity_nbr=None, box_id=None):
 		else:
 			good = True
 
-		#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-		### ADD A CHECK FOR DUPLICATE ID
+		# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+		# # ADD A CHECK FOR DUPLICATE ID
 		#
-		# Contact dictionaries look something like this (with the box IDs truncated)
-		### {'*main, PUB002016013113C...4930E4': {'box_id': 
-		### 	'PUB002016013113CC9...', 'id_nbr': 1}, 
-		### 	'*junkbox, PUB002016013113C...7869BB': {'box_id': 'PUB002016013113...', 'id_nbr': 2}, 
-		### 	' dup 4, PUB002016013113C...7869BB': 
-		### 	{'nickname': ' dup 4', 'box_id': 'PUB002016013113CC.....', 'contact_note': ' dup 4 note', 'id_nbr': 7}, 
-		### 	' Chris 2, PUB002016013113C...6FA8D2': 
-		### 	{'nickname': ' Chris 2', 'box_id': 'PUB002016013.....', 'contact_note': ' adf', 'id_nbr': 6}
-		### }
-
 		contact_dict = natmsgclib.nm_build_contact_dict(current_identity, 
 			local_only=False, include_anonymous=False)
 		if contact_dict is None:
@@ -2102,11 +2122,13 @@ def nm_delete_contact(identity_nbr=None):
 		natmsgclib.SESSION_PW)
 
 	nick = natmsgclib.nm_decrypt_local_txt( \
-		natmsgclib.MAIN_CONFIG[current_identity]['contact_nickname' + str(orig_contact_nbr)],
+		natmsgclib.MAIN_CONFIG[current_identity][
+            'contact_nickname' + str(orig_contact_nbr)],
 		natmsgclib.SESSION_PW)
 
 	note = natmsgclib.nm_decrypt_local_txt( \
-		natmsgclib.MAIN_CONFIG[current_identity]['contact_note' + str(orig_contact_nbr)],
+		natmsgclib.MAIN_CONFIG[current_identity][
+            'contact_note' + str(orig_contact_nbr)],
 		natmsgclib.SESSION_PW)
 
 	print('  Box ID: ' + bid)
@@ -2120,7 +2142,8 @@ def nm_delete_contact(identity_nbr=None):
 		del(natmsgclib.MAIN_CONFIG[current_identity]['contact_nickname' \
 			+ str(orig_contact_nbr)])
 
-		del(natmsgclib.MAIN_CONFIG[current_identity]['contact_note' + str(orig_contact_nbr)])
+		del(natmsgclib.MAIN_CONFIG[current_identity][
+            'contact_note' + str(orig_contact_nbr)])
 
 	junk, config_fname = natmsgclib.nm_find_default_config_fname()
 	# Save config to disk -- To Do: maybe make a backup of config
@@ -2154,16 +2177,16 @@ def nm_select_contact(prompt='Select a destination box ID (enter a number): ',
 		current_identity = 'Identity' + str(identity_nbr)
 
 	# Note: The contact dict has entries like this:
-	#     {'*my main box id PUB123123.....123312': {'id_nbr': 7, 'box_id': PUB....}}
+	#   {'*my main box id PUB123123.....123312': {'id_nbr': 7, 'box_id': PUB....}}
 	contact_dict = natmsgclib.nm_build_contact_dict(current_identity, 
 		local_only=local_only, include_anonymous=include_anonymous)
 	if contact_dict is None:
-		## Unable to build the contact list.
-		##
-		## to not issue an error to the screen because this will
-		## fail when I try to get a nickname for people who are not
-		## in the database or for anonymous--I will simply omit
-		## the nickname later if need be.
+		# Unable to build the contact list.
+		#
+		# to not issue an error to the screen because this will
+		# fail when I try to get a nickname for people who are not
+		# in the database or for anonymous--I will simply omit
+		# the nickname later if need be.
 		return((natmsgclib.print_err(13604, 'Could not build the contact list.'),
 			None, None))
 
@@ -2245,8 +2268,10 @@ def nm_edit_settings():
 		'Select the default BOX ID (from within the current identity)',
 		'Set screen WIDTH (in characters)',
 		'Set screen HEIGHT (in characters)',
-		'Set VERBOSITY (how many warning or status messages appear when you send or receive)',
-		'Set the EDITOR command (allows you to run you favorite text editor for composing messages)',
+		'Set VERBOSITY (how many warning or status messages '
+        + 'appear when you send or receive)',
+		'Set the EDITOR command (allows you to run you favorite '
+        + 'text editor for composing messages)',
 		'Show LONG summaries in the message listing.',
 		'Show SHORT summaries in the message listing.',
 		'Change the DOWNLOAD directory.',
@@ -2262,7 +2287,8 @@ def nm_edit_settings():
 	choice = -1
 	while choice < 0:
 		choice, selected_txt = natmsgclib.nm_menu_choice(menu_txt,
-			title='Select the option to view or change (your settings file is: ' + config_fname + ')')
+			title='Select the option to view or change (your '
+            + 'settings file is: ' + config_fname + ')')
 
 		if choice == 0:
 			# Change identity:
@@ -2293,13 +2319,18 @@ def nm_edit_settings():
 		elif choice == 2:
 			# screen width
 			print('\n\n\n\n')
-			print('Note that you can adjust the screen width while viewing messages by pressing ' \
-				+ 'the W key followed by ENTER.  You can press lower case w to decrease the width. ' \
-				+ 'To increase the width by 20 characters while viewing a message, enter 20W ' \
+			print('Note that you can adjust the screen width while '
+                + 'viewing messages by pressing '
+				+ 'the W key followed by ENTER.  You can press '
+                + 'lower case w to decrease the width. '
+				+ 'To increase the width by 20 characters while '
+                + 'viewing a message, enter 20W '
 				+ 'and then ENTER.\n\n')
 			w_str = natmsgclib.MAIN_CONFIG['SETTINGS']['screen_width']
-			answer = natmsgclib.input_no_confirm('Enter an integer value for the screen width ' \
-				+ 'in characters (reasonable values are 0-200... current value is ' + w_str + ') ', 
+			answer = natmsgclib.input_no_confirm('Enter an integer '
+                + 'value for the screen width '
+				+ 'in characters (reasonable values are 0-200'
+                + '... current value is ' + w_str + ') ', 
 				int_answer=True	)
 			if answer is not None:
 				if isinstance(answer, int):
@@ -2796,11 +2827,11 @@ def nm_add_public_box_id(current_identity, expire_yyyymmdd=None, batch=False):
 
 	# Find the 'box id index number ' for the new box ID:
 	pub_id_nbr = 1
-	while 'pubid' + str(pub_id_nbr)  in natmsgclib.MAIN_CONFIG[current_identity].keys():
+	while 'pubid' + str(pub_id_nbr) \
+            in natmsgclib.MAIN_CONFIG[current_identity].keys():
 		# If the key exists, increment this number until there
 		# is no entry for that public id...
 		pub_id_nbr += 1
-
 
 	nickname = ''
 	name_key = 'identity_nickname' + str(id_nbr)
@@ -2819,11 +2850,13 @@ def nm_add_public_box_id(current_identity, expire_yyyymmdd=None, batch=False):
 		+ current_identity + ' ' + nickname + '? (y/n): ', batch=batch):
 		
 		if expire_yyyymmdd is None and not batch:
-			if natmsgclib.nm_confirm(prompt='Do you want to set a custom expiration date? ' \
-				+ 'For example, if you are going to post this ID online, you might ' \
-				+ 'want to set the expiration date for next month to reduce Spam. ' \
-				+ 'Messages will not be forwarded to the new ID after the expiration ' \
-				+ 'date.\nUse a custom expiration date for the new box ID? (y/n): ', batch=batch):
+			if natmsgclib.nm_confirm(
+                prompt='Do you want to set a custom expiration date? '
+				+ 'For example, if you are going to post this ID online, you might '
+				+ 'want to set the expiration date for next month to reduce Spam. '
+				+ 'Messages will not be forwarded to the new ID after the expiration '
+				+ 'date.\nUse a custom expiration date for the new box ID? (y/n): ',
+                batch=batch):
 
 				expire_yyyymmdd = input('Enter the YYYYMMDD expiration date: ')
 
@@ -2832,20 +2865,23 @@ def nm_add_public_box_id(current_identity, expire_yyyymmdd=None, batch=False):
 
 		if err_nbr != 0:
 			
-			print( 'Failed to create the box ID.  Try again in 10 minutes. Error: ' \
+			print( 'Failed to create the box ID.  Try again in 10 minutes. Error: '
 				+ str(err_nbr))
 			input('Press any key to continue...')
 			return(34954)
 			
 		else:
 			config_txt = natmsgclib.nm_encrypt_local_txt(pub_id2, natmsgclib.SESSION_PW)
-			natmsgclib.MAIN_CONFIG[current_identity]['pubid' + str(pub_id_nbr)] = config_txt
+			natmsgclib.MAIN_CONFIG[current_identity][
+                'pubid' + str(pub_id_nbr)] = config_txt
 	
-			nickname = natmsgclib.input_and_confirm('Enter a nickname for the new box ID (this is ' \
+			nickname = natmsgclib.input_and_confirm(
+                'Enter a nickname for the new box ID (this is '
 				+ 'never sent to any server)' + os.linesep + ': ')
 			if nickname is not None:
 				config_txt = natmsgclib.nm_encrypt_local_txt(nickname, natmsgclib.SESSION_PW)
-				natmsgclib.MAIN_CONFIG[current_identity]['nickname' + str(pub_id_nbr)] = config_txt
+				natmsgclib.MAIN_CONFIG[current_identity][
+                    'nickname' + str(pub_id_nbr)] = config_txt
 
 			# Save config to disk -- To Do: maybe make a backup of config
 			natmsgclib.nm_write_config()

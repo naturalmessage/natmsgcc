@@ -2844,7 +2844,6 @@ def nm_archiver2(
         message_included=False,
         f_list=None,
         output_dir=None,
-        strip_path=True,
         ballast_included=False,
         batch=False,
         extract_attachments=False,
@@ -3014,8 +3013,7 @@ def nm_archiver2(
         rc = nm_archiver2_attach_files(
             f_list,
             fd_out,
-            item_types=i_types,
-            strip_path=strip_path)
+            item_types=i_types)
         if rc != 0:
             return((33381, 'Could not properly archive the file(s).', None))
 
@@ -5259,7 +5257,9 @@ def pw_hash2(iterations=97831, receipt_fname=None):
                       + 'the configuration file.')
                 junk = input('Press any key to continue....')
     else:
-        if not os.path.isfile(receipt_fname):
+        if os.path.isfile(receipt_fname):
+            print('using password receipt file: ' receipt_fname)
+        else
             need_new_receipt = True
 
     def main_loop():
