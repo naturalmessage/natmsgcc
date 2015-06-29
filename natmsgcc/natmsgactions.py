@@ -57,17 +57,19 @@ shard_metadata = {}
 template_msg = '{\rtf1\ansi{\fonttbl\f0\fswiss Helvetica;}\f0\pard ' \
     + 'See the attached file(s).\par}'
 
-
 shard_send_queue = queue.Queue()
 shard_receive_queue = queue.Queue()
 
 SMD_PREAMBLE = '{"creatorVersion":"nmx1","meta":"'
-privacy_notice = 'This electronic message, and any content linked from it, '
-    + 'is for the sole use of the intended recipient and contains '
-    + 'confidential and privileged information. If you received this '
-    + 'message by error, please delete it from your computer and inform '
-    + 'the sender. Any unauthorized review, use, disclosure or '
-    + 'distribution of this message, items linked from it, or metadata '
+
+#
+#
+privacy_notice = 'This electronic message, and any content linked from it, ' \
+    + 'is for the sole use of the intended recipient and contains ' \
+    + 'confidential and privileged information. If you received this ' \
+    + 'message by error, please delete it from your computer and inform ' \
+    + 'the sender. Any unauthorized review, use, disclosure or ' \
+    + 'distribution of this message, items linked from it, or metadata ' \
     + 'about its contents is prohibited.'
 
 ########################################################################
@@ -77,6 +79,8 @@ def nm_send_shards(wrk_dir, sargs_array):
     """
     This will read an array of ShardSendQueueArgs objects
     and send (push) the shards from disk to shard servers.
+    If there is an error, this will will try to resend the shard
+    (UPDATE THIS TO PICK A NEW SHARD SERVER BEFORE RESENDING).
 
     All shards must be staged in the same working directory (wrk_dir).
 
@@ -96,8 +100,8 @@ def nm_send_shards(wrk_dir, sargs_array):
             return(10500)
 
         # start a thread for this shard
-        t = natmsgclib.thread_shard_send(shard_send_queue)
-        # Start thread_shard_send, which listens to shard_send_queue
+        t = natmsgclib.ThreadShardSend(shard_send_queue)
+        # Start ThreadShardSend, which listens to shard_send_queue
         t.start()
         # Put the shard arguments into the queue (the put action does
         # not have a return value)
@@ -131,21 +135,24 @@ def nm_send_shards(wrk_dir, sargs_array):
             # For each shard_ID, verify that the status is 'sent'. If
             # status is 'failed', then resend.  If it has been more than
             # 5 minutes, resend (allow time for slow uploads?).
-            status_fname=os.path.join(wrk_dir, sa.shard_id + '.status')
+            status_fname = os.path.join(wrk_dir, sa.shard_id + '.status')
             st = None
             status_json = None
             try:
                 fd_status = open(status_fname, 'r')
-                status_json = json.loads(fd_status.read())
+                try:
+                    status_json = json.loads(fd_status.read())
+                except:
+                    e = str(sys.exc_info()[0:2])
+                    print(e)
+                    return(10532)
+                finally:
+                    fd_status.close()
             except:
                 e = str(sys.exc_info()[0:2])
-                print(e)
-                try:
-                    fd_status.close()
-                except:
-                    pass
-            else:
-                fd_status.close()
+                print('Error. Failed to open status file: '
+                    + status_fname + ' msg: ' + e)
+                return(10533)
 
             try:
                 st = status_json['status']
@@ -163,9 +170,11 @@ def nm_send_shards(wrk_dir, sargs_array):
                     # Update the status to 'sending' and try again.
                     natmsgclib.nm_write_shard_status(status_fname, 'resending')
 
-                    natmsgclib.debug_msg(2, '=== Resending shard (maybe the shard ' \
-                        + 'server during the testing period is down temporarily for maintenance).')
-                    t = natmsgclib.thread_shard_send(shard_send_queue)
+                    print('++ once debug on status file: ' + repr(st))
+                    natmsgclib.debug_msg(
+                        2,
+                        '=== Resending shard with status file: ' + status_fname)
+                    t = natmsgclib.ThreadShardSend(shard_send_queue)
                     #t.setDaemon(True)
                     t.start()
                     shard_send_queue.put(sa) # this is wrong??, put the current arg object
@@ -498,7 +507,7 @@ def shard_and_send(input_fname, pw, kek,  outbound_staging_dir,
         # This will eventually select a web host from the serverFarm list.
         shard_id = natmsgclib.nm_gen_shard_id()
         # use the same shard_letter as above.
-        sargs = natmsgclib.ShardSendQueueArgs(web_host='shard01.naturalmessage.com',
+        sargs = natmsgclib.ShardSendQueueArgs(web_host='https://shard01.naturalmessage.com',
             shard_id=shard_id, 
             input_fpath=os.path.join(outbound_staging_dir, metadata_prefixes['preamble'] \
                 + shard_letter), wrk_dir=outbound_staging_dir, add_proof_of_work=True)
@@ -510,7 +519,7 @@ def shard_and_send(input_fname, pw, kek,  outbound_staging_dir,
             # This will eventually select a web host from the serverFarm list.
             shard_id = natmsgclib.nm_gen_shard_id()
             # use the same shard_letter as above.
-            sargs = natmsgclib.ShardSendQueueArgs(web_host='shard01.naturalmessage.com',
+            sargs = natmsgclib.ShardSendQueueArgs(web_host='https://shard01.naturalmessage.com',
                 shard_id=shard_id, 
                 input_fpath=os.path.join(outbound_staging_dir, metadata_prefixes['big'] \
                 + shard_letter),
@@ -650,7 +659,7 @@ def nm_receive_shards(out_dir, arg_array):
     message_received = False
     for sa in arg_array:
         # start a thread
-        t = natmsgclib.thread_shard_receive(shard_receive_queue)
+        t = natmsgclib.ThreadShardReceive(shard_receive_queue)
         #t.setDaemon(True)
         t.start()
         # Put the shard arguments into the queue.
@@ -715,9 +724,9 @@ def nm_receive_shards(out_dir, arg_array):
                     # Update the status to 'sending' and try again.
                     natmsgclib.nm_write_shard_status(status_fname, 'refetching')
 
-                    natmsgclib.debug_msg(2, '=== Resending shard (maybe the shard server ' \
+                    natmsgclib.debug_msg(2, '=== Refetching the shard (maybe the shard server ' \
                         + 'during the testing period is down temporarily for maintenance).')
-                    t = natmsgclib.thread_shard_receive(shard_receive_queue)
+                    t = natmsgclib.ThreadShardReceive(shard_receive_queue)
                     #t.setDaemon(True)
                     t.start()
                     shard_receive_queue.put(sa) # this is wrong??, put the current arg object
@@ -1138,7 +1147,7 @@ def unpack_metadata_files(inbound_save_dir, private_box_id, fetch_id,
                         
                         if shard_status['status'] != 'received':
                             # Add this shard to the queue to be fetched.
-                            shard_args = natmsgclib.shard_receive_queue_args(web_host=u['resource'],
+                            shard_args = natmsgclib.ShardReceiveQueueArgs(web_host=u['resource'],
                                 shard_id=u['key'], output_fname=u['path'],
                                 out_dir=shard_dir)
     
@@ -1513,6 +1522,18 @@ def nm_send_message(outbound_staging_dir, pw, kek, msg_fname=None,
 
     This returns a tuple: (return_code, old_school_link). The link
     will be None if this is not a message via the old-school transport.
+
+    The sending process...
+    nm_actions.nm_send_message()
+        prepare all the arguments and directories.
+        archive the input file(s) with natmsgclib.nm_archiver2().
+        nm_actions.shard_and_send()
+            nm_actions.nm_send_shards()
+                start natmsgclib.ThreadShardSend
+                put data into a ShardSendQueueArgs, which will
+                execute natmsgclib.ThreadShardSend.run()
+                Resend if there is an error.
+
     """
     # add the text edit thing here
 

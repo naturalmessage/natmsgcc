@@ -534,7 +534,7 @@ class ShardSendQueueArgs(object):
     This class will hold data that is queued for the shard-read process.
     The content includes data needed to send a shard. A list of objects
     of this class will be sent to nm_send_shards(), and ultimately
-    it is thread_shard_send.run() that will process the data in this object.
+    it is ThreadShardSend.run() that will process the data in this object.
 
     Maybe send EITHER cargo_bytes or input_fname.
 
@@ -564,7 +564,11 @@ class ShardSendQueueArgs(object):
         # fpath is used for verification and loading before sending
         # to the shard_send routine
         self.input_fpath = input_fpath
-        self.web_host = web_host
+        if web_host.startswith('https'):
+            self.web_host = web_host
+        else:
+            raise RuntimeError('The web_host sent to ShardSendQueueArgs '
+                + 'must start with https. I found: ' + web_host)
         self.shard_id = shard_id
         self.cargo_bytes = cargo_bytes
         self.wrk_dir = wrk_dir
@@ -590,7 +594,7 @@ class ShardSendQueueArgs(object):
 
 
 #
-class thread_shard_send(threading.Thread):
+class ThreadShardSend(threading.Thread):
     """A thread to send a shard to a shard server.
 
     Arguments are passed during initialization in the form of a
@@ -602,9 +606,10 @@ class thread_shard_send(threading.Thread):
         archive the input file(s) with natmsgclib.nm_archiver2().
         nm_actions.shard_and_send()
             nm_actions.nm_send_shards()
-                start thread_shard_send
+                start ThreadShardSend
                 put data into a ShardSendQueueArgs, which will
-                execute thread_shard_send.run()
+                execute ThreadShardSend.run()
+                Resend if there is an error
 
     Positional arguments during initialization:
     A ShardSendQueueArgs that contains input paths other things.
@@ -620,10 +625,12 @@ class thread_shard_send(threading.Thread):
         self.init_failed = False
 
     def _process_good_response(self):
-        # ## # # # # # # # # ## ## ## # ## # # # ## # # # # ## # # ## #
         # _process_good_response
-        # The server returned JSON, but there was no
-        # error message (case sensitive).
+        # If the response is good, write the shard status
+        # as 'sent' and call self.qa.task_done().
+        # If the response from the server is not good,
+        # register a bad code in the shard status file
+        # and call self.qa.task_done().
 
         self.svr_response = None
         try:
@@ -640,50 +647,30 @@ class thread_shard_send(threading.Thread):
 
         if self.svr_response is not None:
             # valid JSON response... check for error mesages.
-            self.err_response = None
-            try:
-                self.err_response = self.r.json()['shard_create']['Error']
-            except:
-                pass
-
-            if self.err_response is not None:
+            if 'Error' in  self.svr_response.keys():
                 nm_write_shard_status(
                     self.status_fname,
                     'failed',
                     error_detail=self.err_response)
                 self.qa.task_done()  # Tell the queue that the task is finished
                 return(23800)
-            else:
-                try:
-                    status = self.r.json()['shard_create']['status']
-                except:
-                    self.err_msg = 'Final status was not returned from the ' \
-                        + 'server.'
-                    nm_write_shard_status(
-                        self.status_fname,
-                        'failed', error_detail=self.err_msg)
-                    # Tell the queue that the task is finished:
-                    self.qa.task_done()
-                    return(23900)
+            elif 'status' in  self.svr_response.keys():
+                status = self.svr_response['status']
 
                 if status.upper() == 'OK':
                     debug_msg(5, '=== Good shard status for ' + self.shard_id)
-                    # Good  -- check for status=ok
-                    debug_msg(
-                        4,
-                        'In thread_shard_send, url was ' + self.url
-                        + ' officially good ')
-
                     nm_write_shard_status(self.status_fname, 'sent')
                     # Tell the queue that the task is finished
                     self.qa.task_done()
                     return(0)
                 else:
+                    nm_write_shard_status(self.status_fname, 'failed')
                     self.qa.task_done()
                     return(24000)
         else:
             # The shard server returned something, but it could
             # not be parsed into JSON.
+            nm_write_shard_status(self.status_fname, 'failed')
             self.qa.task_done()  # tell the queue that the task is finished
             return(24100)
         return(0)
@@ -718,10 +705,11 @@ class thread_shard_send(threading.Thread):
             #
             # tell the queue that the task is finished (doesn't help)
             self.qa.task_done()
-            nm_write_shard_status(self.status_fname, 'failed')
-            return(print_err(
-                23000,
-                'There was no wrk_dir sent to thread_shard_send.'))
+            raise RuntimeError('There was no wrk_dir sent to ThreadShardSend.')
+
+        if self.shard_id is None:
+            self.qa.task_done()
+            raise RuntimeError('There was no shard_id sent to ThreadShardSend.')
 
         self.status_fname = os.path.join(
             self.wrk_dir,
@@ -730,14 +718,19 @@ class thread_shard_send(threading.Thread):
 
         debug_msg(
             5,
-            'In thread_shard_send, status fname is '
-            + self.status_fname)
+            'In ThreadShardSend, status fname is ' + self.status_fname)
 
         if self.cargo_bytes is None:
             # read from the input file:
             try:
                 self.fd_in = open(self.input_fpath, 'rb')
-                self.cargo_bytes = self.fd_in.read()
+                try:
+                    self.cargo_bytes = self.fd_in.read()
+                except:
+                    # The error is trapped below when checking cargo_bytes
+                    pass
+                finally:
+                    self.fd_in.close()
             except:
                 self.e = str(sys.exc_info()[0:2])
                 try:
@@ -749,25 +742,24 @@ class thread_shard_send(threading.Thread):
                 self.qa.task_done()  # tell the queue that the task is finished
                 return(print_err(
                     23100,
-                    'Failed to read the input_fpath (file '
+                    'Failed to open the input_fpath (file '
                     + 'containing the shard to send) '
-                    + 'for thread_shard_send: '
+                    + 'for ThreadShardSend: '
                     + str(self.input_fpath) + '. ' + self.e))
 
-            self.fd_in.close()
 
         if not isinstance(self.cargo_bytes, bytes):
-            self.err_msg = 'Cargo_bytes sent to thread_shard_send was not ' \
+            self.err_msg = 'Cargo_bytes sent to ThreadShardSend was not ' \
                 + 'in python bytes() format.'
             nm_write_shard_status(
                 self.status_fname,
                 'failed',
                 error_detail={'Error-detail': self.err_msg})
 
-            self.qa.task_done()  # tell the queue that the task is finished
+            self.qa.task_done()  # Tell the queue that the task is finished.
             return(23400)
 
-        self.cargo_sha1 = hashlib.sha1(self.cargo_bytes).digest()  # binary
+        self.cargo_sha1 = hashlib.sha1(self.cargo_bytes).digest()  # Binary SHA1
 
         # #hdrs = {'NM-Signature': sig}
         if self.add_proof_of_work:
@@ -778,7 +770,7 @@ class thread_shard_send(threading.Thread):
 
             debug_msg(
                 5,
-                'In thread_shard_send, final pow is ' + self.nm_pow)
+                'In ThreadShardSend, final pow is ' + self.nm_pow)
 
             self.url = self.web_host + '/shard_create?shard_id=' \
                 + self.shard_id \
@@ -809,9 +801,9 @@ class thread_shard_send(threading.Thread):
                 verify=False,
                 files=self.attached_files)
         except:
-            self.err_msg = 'Error. Could not create shard: ' + self.shard_id
-            if self.r is not None:
-                self.err_msg += '  Detail' + self.r.text
+            self.e = str(sys.exc_info()[0:2])
+            self.err_msg = 'Error. Could not create shard: ' \
+                + self.shard_id + ' Python err msg: ' + self.e
 
             nm_write_shard_status(
                 self.status_fname,
@@ -824,30 +816,60 @@ class thread_shard_send(threading.Thread):
 
         self.json_err_msg = None
         if self.r is not None:
-            try:
-                # see if there is a JSON error message:
-                self.json_err_msg = self.r.json()['shard_create']['Error']
-            except:
-                # There is no error message that is logged
-                # under the key "Error" (case sensitive),
-                # which is good.
-                # I will use the "None" test below
-                pass
+            # # try:
+            # #     # see if there is a JSON error message:
+            # #     self.json_err_msg = self.r.json()['shard_create']['Error']
+            # # except:
+            # #     # There is no error message that is logged
+            # #     # under the key "Error" (case sensitive),
+            # #     # which is good.
+            # #     # I will use the "None" test below
+            # #     pass
 
-            if self.json_err_msg is not None:
-                # There is an error message in the JSON,
-                # record an error and log it.
+            # # if self.json_err_msg is not None:
+            # #     # There is an error message in the JSON,
+            # #     # record an error and log it.
+            # #     nm_write_shard_status(
+            # #         self.status_fname, 'failed', error_detail='The server '
+            # #         + 'returned an error while I was pushing a '
+            # #         + 'shard to a shard server: '
+            # #         + str(self.json_err_msg))
+            # #     self.qa.task_done()  # tell the queue that the task is finished
+            # #     return(23600)
+            try:
+                svr_response = self.r.json()['shard_create']
+            except:
                 nm_write_shard_status(
                     self.status_fname, 'failed', error_detail='The server '
-                    + 'returned an error while I was pushing a '
-                    + 'shard to a shard server: '
-                    + str(self.json_err_msg))
+                    + 'did not return a valid response')
                 self.qa.task_done()  # tell the queue that the task is finished
                 return(23600)
-            else:
-                rc = _process_good_response()
-                if rc != 0:
+
+            if 'Error' in svr_response.keys():
+                print('++ temp debug is Error.')
+                nm_write_shard_status(
+                    self.status_fname, 'failed', error_detail='The server '
+                    + 'returned an error: ' + svr_response['Error'])
+                self.qa.task_done()  # tell the queue that the task is finished
+                return(23601)
+            elif 'status' in svr_response.keys():
+                print('++ temp debug status is a key.')
+                if 'OK' == svr_response['status']:
+                    print('++ temp debug is OK')
+                    rc = self._process_good_response()
+                    debug_msg( 4, 'Good response with rc=' + str(rc))
                     return(rc)
+                else:
+                    print('++ temp debug of NON-OK' + svr_response['status'])
+
+            nm_write_shard_status(
+                self.status_fname, 'failed',
+                error_detail='Unexpected server response: ' + repr(svr_response))
+            print('++ temp debug of keys')
+            for k in svr_response.keys():
+                print(k + ' = <' + svr_response['status'] + '> in brackets.')
+            self.qa.task_done()  # tell the queue that the task is finished
+            return(23603)
         else:
             # Tell the queue that the task is finished.
             self.qa.task_done()
@@ -894,7 +916,7 @@ class ShardReceiveQueueArgs(object):
 
 ###############################################################################
 #
-class thread_shard_receive(threading.Thread):
+class ThreadShardReceive(threading.Thread):
     """A thread to get shards from a shard server.
 
     The arguments are sent in ShardRecieveQueueArguments qa.
@@ -904,7 +926,7 @@ class thread_shard_receive(threading.Thread):
     read_inbox()
         unpack_metadata_files()
             nm_recieve_shards()
-                thread_shard_receive.run()
+                ThreadShardReceive.run()
     """
     def __init__(self, qa):
         # qa is my queue args class
@@ -934,7 +956,7 @@ class thread_shard_receive(threading.Thread):
             self.qa.task_done()
             return(print_err(
                 25000,
-                'There was no output directory  sent to thread_shard_send.'))
+                'There was no output directory  sent to ThreadShardReceive.'))
 
         self.status_fname = os.path.join(
             self.out_dir,
@@ -1216,8 +1238,7 @@ def create_shard_pow(
     # adds two bytes of junk.
     bit_len = len(str(bin(mask))) - 2
 
-    debug_msg(7, 'In create_shard_pow, mask is  ' + str(bin(mask)))
-    debug_msg(7, 'Length of mask ' + str(bit_len))
+    debug_msg(9, 'In create_shard_pow, mask is  ' + str(bin(mask)))
 
     # Conduct a brute-force loop to determine
     # the nonce_hex_str that can be added to the other codes
@@ -1253,15 +1274,10 @@ def create_shard_pow(
     end_time = time.time()
     ellapsed_time = end_time - start_time
 
-    debug_msg(
-        7,
-        'Found it on iter ' + str(j) + '. nonce =' + str(nonce_hex_str)
-        + ' h =' + str(h) + ' elapsed time: ' + str(ellapsed_time))
-
     # Final report:
     # The user will submit the nonce_hex_str value as proof of work.
     debug_msg(
-        7,
+        9,
         'Proof of work info: File size: ' + str(file_size) + ' bits: '
         + str(target_bits) + ' elapsed time: ' + str(ellapsed_time))
 
@@ -2384,6 +2400,8 @@ def nm_inbox_read(
         svr_json = None
         if session_id is None:
             # On the first read or old-school read, I don't have a session ID
+            debug_msg(5, 'In inbox_read, first read.')
+
             requests.packages.urllib3.disable_warnings()
             try:
                 r = requests.get(url, headers={'User-Agent': ''}, verify=False)
@@ -2421,6 +2439,8 @@ def nm_inbox_read(
             # it as a previous_smd_id to kill bad smds.
 
             # un-base64 it, but allow for nonbase64
+            debug_msg(8, 'In inbox_read has a response from the server: ' + repr(r))
+
             try:
                 # The SMD was wrapped in Base64 (CJ-style), so unwrap
                 # it and put it
@@ -2456,6 +2476,8 @@ def nm_inbox_read(
                     'There was an error reading shard meta data. '
                     + 'The keys are ' + repr(svr_json))
                 junk = input('press any key to continue...')
+
+            debug_msg(8, 'In inbox_read I have JSON.')
 
             if 'Error' in svr_json['inbox_read'].keys():
                 # The 'Error' key is case sensitive.
@@ -2620,6 +2642,10 @@ def nm_secure_remove(fname, passes=3):
     Return value:
     0 on success, else nonzero.
     """
+
+    print('temporarily not erasing files')
+    return (0)
+
     blk_size = 1024
     fsize = os.path.getsize(fname)
     bytes_written = 0
@@ -5258,8 +5284,8 @@ def pw_hash2(iterations=97831, receipt_fname=None):
                 junk = input('Press any key to continue....')
     else:
         if os.path.isfile(receipt_fname):
-            print('using password receipt file: ' receipt_fname)
-        else
+            print('using password receipt file: ' + receipt_fname)
+        else:
             need_new_receipt = True
 
     def main_loop():
